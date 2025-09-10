@@ -1,0 +1,13 @@
+<section class="py-5 {% if value.background_style == 'light' %}bg-light{% elif value.background_style == 'primary' %}bg-primary text-white{% endif %}">
+    <div class="container">
+        {% if value.title %}
+        <div class="text-center mb-4">
+            <h2 class="display-5 fw-bold {% if value.background_style == 'primary' %}text-white{% else %}text-primary{% endif %}">{{ value.title }}</h2>
+        </div>
+        {% endif %}
+        
+        <div class="{% if value.background_style == 'primary' %}text-white{% endif %}">
+            {{ value.content }}
+        </div>
+    </div>
+</section>

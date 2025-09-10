@@ -1,0 +1,37 @@
+{% load wagtailimages_tags %}
+
+<header class="{% if value.background_image %}{% else %}bg-primary{% endif %} text-white py-5 position-relative" 
+        {% if value.background_image %}style="background-image: url('{{ value.background_image.file.url }}'); background-size: cover; background-position: center; background-attachment: fixed;"{% endif %}>
+    
+    {% if value.background_image %}
+    <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25"></div>
+    {% endif %}
+    
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-3 fw-bold mb-3">{{ value.title }}</h1>
+                <p class="lead mb-4">{{ value.subtitle }}</p>
+                <div>
+                    <a href="{% if value.primary_button_url %}{{ value.primary_button_url }}{% else %}/book/{% endif %}" 
+                       class="btn btn-light btn-lg me-3">{{ value.primary_button_text }}</a>
+                    <a href="{% if value.secondary_button_url %}{{ value.secondary_button_url }}{% else %}/services/{% endif %}" 
+                       class="btn btn-outline-light btn-lg">{{ value.secondary_button_text }}</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                {% if value.hero_image %}
+                    <div class="hero-image-container">
+                        <div class="d-inline-block rounded-circle shadow-lg overflow-hidden" style="width: 350px; height: 350px;">
+                            {% image value.hero_image fill-350x350 class="img-fluid" %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center shadow-lg" style="width: 350px; height: 350px;">
+                        <span style="font-size: 8rem;">✨</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>

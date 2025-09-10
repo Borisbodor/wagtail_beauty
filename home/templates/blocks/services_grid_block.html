@@ -1,0 +1,16 @@
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold text-primary mb-3">{{ value.title }}</h2>
+            <p class="lead text-muted">{{ value.subtitle }}</p>
+        </div>
+        
+        {% if value.services %}
+        <div class="row g-4">
+            {% for service in value.services %}
+                {% include 'blocks/service_block.html' with value=service %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>

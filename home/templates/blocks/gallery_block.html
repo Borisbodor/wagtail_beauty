@@ -1,0 +1,23 @@
+{% load wagtailimages_tags %}
+
+<section class="py-5">
+    <div class="container">
+        {% if value.title %}
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold text-primary">{{ value.title }}</h2>
+        </div>
+        {% endif %}
+        
+        {% if value.images %}
+        <div class="row g-3">
+            {% for image in value.images %}
+            <div class="col-md-6 col-lg-4">
+                <div class="gallery-item">
+                    {% image image width-400 height-300 class="img-fluid rounded shadow-sm w-100" style="object-fit: cover; height: 250px;" %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>

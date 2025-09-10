@@ -1,0 +1,12 @@
+<section class="text-center py-5 {% if value.background_style == 'light' %}bg-light{% elif value.background_style == 'primary' %}bg-primary text-white{% endif %}">
+    <div class="container">
+        <h2 class="display-5 fw-bold {% if value.background_style == 'primary' %}text-white{% else %}text-primary{% endif %} mb-3">{{ value.title }}</h2>
+        <p class="lead {% if value.background_style == 'primary' %}text-white-50{% else %}text-muted{% endif %} mb-4">{{ value.subtitle }}</p>
+        <div>
+            <a href="{% if value.primary_button_url %}{{ value.primary_button_url }}{% else %}/book/{% endif %}" 
+               class="btn {% if value.background_style == 'primary' %}btn-light{% else %}btn-primary{% endif %} btn-lg me-3">{{ value.primary_button_text }}</a>
+            <a href="{% if value.secondary_button_url %}{{ value.secondary_button_url }}{% else %}/contact/{% endif %}" 
+               class="btn {% if value.background_style == 'primary' %}btn-outline-light{% else %}btn-outline-primary{% endif %} btn-lg">{{ value.secondary_button_text }}</a>
+        </div>
+    </div>
+</section>

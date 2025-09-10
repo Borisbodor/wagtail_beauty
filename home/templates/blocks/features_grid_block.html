@@ -1,0 +1,16 @@
+<section class="py-5 {% if value.background_style == 'light' %}bg-light{% elif value.background_style == 'primary' %}bg-primary text-white{% endif %}{% if value.background_style == 'light' %} rounded{% endif %}">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold {% if value.background_style == 'primary' %}text-white{% else %}text-primary{% endif %} mb-3">{{ value.title }}</h2>
+            <p class="lead {% if value.background_style == 'primary' %}text-white-50{% else %}text-muted{% endif %}">{{ value.subtitle }}</p>
+        </div>
+        
+        {% if value.features %}
+        <div class="row g-4">
+            {% for feature in value.features %}
+                {% include 'blocks/feature_block.html' with value=feature %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
