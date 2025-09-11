@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+    {% if success %}
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        {{ page.thank_you_text|richtext }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div class="text-center">
+                        <a href="{{ page.url }}" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-plus-circle me-2"></i>Book Another Appointment
+                        </a>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="bi bi-house me-2"></i>Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        {% if messages %}
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% for block in page.content %}
+            {% if block.block_type == 'booking_form' %}
+                <section class="py-5">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-8">
+                                <div class="text-center mb-5">
+                                    <h2 class="display-5 fw-bold text-primary mb-3">{{ block.value.title }}</h2>
+                                    <p class="lead text-muted">{{ block.value.subtitle }}</p>
+                                </div>
+
+                                <div class="card shadow-sm border-0">
+                                    <div class="card-header bg-primary text-white">
+                                        <h4 class="mb-0">
+                                            <i class="bi bi-calendar-plus me-2"></i>Appointment Request Form
+                                        </h4>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <form method="post" novalidate>
+                                            {% csrf_token %}
+                                            <div class="row mb-4">
+                                                <div class="col-12">
+                                                    <h5 class="text-secondary mb-3">
+                                                        <i class="bi bi-person me-2"></i>Your Information
+                                                    </h5>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.customer_first_name.label }} *</label>
+                                                    {{ form.customer_first_name }}
+                                                    {% if form.customer_first_name.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.customer_first_name.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.customer_last_name.label }} *</label>
+                                                    {{ form.customer_last_name }}
+                                                    {% if form.customer_last_name.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.customer_last_name.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-4">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.customer_email.label }} *</label>
+                                                    {{ form.customer_email }}
+                                                    {% if form.customer_email.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.customer_email.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.customer_phone.label }} *</label>
+                                                    {{ form.customer_phone }}
+                                                    {% if form.customer_phone.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.customer_phone.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-4">
+                                                <div class="col-12">
+                                                    <h5 class="text-secondary mb-3">
+                                                        <i class="bi bi-scissors me-2"></i>Appointment Details
+                                                    </h5>
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.location.label }} *</label>
+                                                    {{ form.location }}
+                                                    {% if form.location.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.service.label }} *</label>
+                                                    {{ form.service }}
+                                                    {% if form.service.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.service.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-4">
+                                                <label class="form-label">{{ form.preferred_employee.label }}</label>
+                                                {{ form.preferred_employee }}
+                                                <div class="form-text">Leave as "Any Available" if you don't have a preference</div>
+                                                {% if form.preferred_employee.errors %}
+                                                    <div class="text-danger small mt-1">{{ form.preferred_employee.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="row mb-4">
+                                                <div class="col-12">
+                                                    <h5 class="text-secondary mb-3">
+                                                        <i class="bi bi-clock me-2"></i>Preferred Time
+                                                    </h5>
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.preferred_date.label }} *</label>
+                                                    {{ form.preferred_date }}
+                                                    {% if form.preferred_date.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.preferred_date.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">{{ form.preferred_time.label }} *</label>
+                                                    {{ form.preferred_time }}
+                                                    {% if form.preferred_time.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.preferred_time.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-4">
+                                                <label class="form-label">{{ form.notes.label }}</label>
+                                                {{ form.notes }}
+                                                {% if form.notes.errors %}
+                                                    <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if form.non_field_errors %}
+                                                <div class="alert alert-danger">
+                                                    {{ form.non_field_errors }}
+                                                </div>
+                                            {% endif %}
+
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                    <i class="bi bi-send me-2"></i>Submit Booking Request
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="text-center mt-3">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock me-1"></i>
+                                                    We'll contact you within 24 hours to confirm your appointment
+                                                </small>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            {% else %}
+                {{ block }}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}
+
+<!-- Custom styling for the booking form -->
+<style>
+    .form-control:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    }
+    
+    .card-header {
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+        border-bottom: 3px solid rgba(255,255,255,0.2);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .text-secondary {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem !important;
+    }
+</style>
