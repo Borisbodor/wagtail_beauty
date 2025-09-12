@@ -1,7 +1,7 @@
 from django.db import models
 from wagtail.models import Page
 from wagtail.fields import RichTextField, StreamField
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel, TabbedInterface, ObjectList
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.images import get_image_model_string
@@ -209,14 +209,9 @@ class HomePage(HeroMixin, Page):
     ], blank=True, use_json_field=True)
 
     content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
         FieldPanel('content'),
     ]
-    
-    # Use tabbed interface: Content tab + Hero tab
-    edit_handler = TabbedInterface([
-        ObjectList(content_panels, heading='Content'),
-        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
-    ])
 
 
 class EmployeesPage(HeroMixin, Page):
@@ -226,17 +221,12 @@ class EmployeesPage(HeroMixin, Page):
     intro = RichTextField(blank=True, help_text="Introduction text for the employees page")
     
     content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
         FieldPanel('intro'),
     ]
 
     # Constrain child pages to only EmployeePage
     subpage_types = ['home.EmployeePage']
-    
-    # Use tabbed interface: Content tab + Hero tab
-    edit_handler = TabbedInterface([
-        ObjectList(content_panels, heading='Content'),
-        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
-    ])
     
     class Meta:
         verbose_name = "Employees Page"
@@ -264,7 +254,7 @@ class EmployeePage(HeroMixin, Page):
     email = models.EmailField(blank=True, help_text="Employee's email address")
     job_title = models.CharField(max_length=200, help_text="Employee's job title/position")
     description = RichTextField(blank=True, help_text="Employee's bio, specialties, or description")
-    location = models.ForeignKey(
+    work_location = models.ForeignKey(
         'booking.Location', 
         on_delete=models.SET_NULL,
         null=True,
@@ -273,6 +263,7 @@ class EmployeePage(HeroMixin, Page):
     )
 
     content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
         MultiFieldPanel([
             FieldPanel('first_name'),
             FieldPanel('last_name'),
@@ -284,17 +275,11 @@ class EmployeePage(HeroMixin, Page):
             FieldPanel('job_title'),
         ], heading="Contact & Position"),
         FieldPanel('description'),
-        FieldPanel('location'),
+        FieldPanel('work_location'),
     ]
 
     # Constrain parent pages to only EmployeesPage
     parent_page_types = ['home.EmployeesPage']
-    
-    # Use tabbed interface: Employee Info tab + Hero tab
-    edit_handler = TabbedInterface([
-        ObjectList(content_panels, heading='Employee Information'),
-        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
-    ])
     
     def save(self, *args, **kwargs):
         # Auto-generate full_name if empty
@@ -310,8 +295,8 @@ class EmployeePage(HeroMixin, Page):
         """Create/update corresponding Employee in booking app"""
         from booking.models import Employee as BookingEmployee
         
-        if not self.location:
-            return  # Need location for booking employee
+        if not self.work_location:
+            return  # Need work_location for booking employee
             
         # Get or create booking employee
         booking_employee, created = BookingEmployee.objects.get_or_create(
@@ -319,7 +304,7 @@ class EmployeePage(HeroMixin, Page):
             defaults={
                 'first_name': self.first_name,
                 'last_name': self.last_name,
-                'location': self.location,
+                'location': self.work_location,
                 'is_active': True,
             }
         )
@@ -328,7 +313,7 @@ class EmployeePage(HeroMixin, Page):
         if not created:
             booking_employee.first_name = self.first_name
             booking_employee.last_name = self.last_name
-            booking_employee.location = self.location
+            booking_employee.location = self.work_location
             booking_employee.save()
     
     def unpublish(self, *args, **kwargs):
@@ -361,3 +346,165 @@ class EmployeePage(HeroMixin, Page):
     
     class Meta:
         verbose_name = "Employee Page"
+
+
+class LocationsPage(HeroMixin, Page):
+    """
+    Parent page for all location pages. This page displays a listing of all locations.
+    """
+    intro = RichTextField(blank=True, help_text="Introduction text for the locations page")
+    
+    content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
+        FieldPanel('intro'),
+    ]
+
+    # Constrain child pages to only LocationPage
+    subpage_types = ['home.LocationPage']
+    
+    class Meta:
+        verbose_name = "Locations Page"
+
+
+class LocationPage(HeroMixin, Page):
+    """
+    Individual location page. Can only be created as a child of LocationsPage.
+    """
+    # Basic location information
+    location_name = models.CharField(max_length=100, help_text="Location name (e.g. 'Downtown Salon')")
+    address = models.TextField(help_text="Full address of this location")
+    phone = models.CharField(max_length=20, blank=True, help_text="Contact phone number")
+    email = models.EmailField(blank=True, help_text="Contact email")
+    
+    # Location image for the page
+    location_image = models.ForeignKey(
+        get_image_model_string(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text="Location photo"
+    )
+    
+    # Description for the location page
+    description = RichTextField(blank=True, help_text="Location description, amenities, special features")
+    
+    # Hours (matching the booking Location model)
+    HOUR_CHOICES = [
+        ('Closed', 'Closed'),
+        ('8:00 AM - 4:00 PM', '8:00 AM - 4:00 PM'),
+        ('8:00 AM - 5:00 PM', '8:00 AM - 5:00 PM'),
+        ('8:00 AM - 6:00 PM', '8:00 AM - 6:00 PM'),
+        ('8:00 AM - 8:00 PM', '8:00 AM - 8:00 PM'),
+        ('9:00 AM - 5:00 PM', '9:00 AM - 5:00 PM'),
+        ('9:00 AM - 6:00 PM', '9:00 AM - 6:00 PM'),
+        ('9:00 AM - 7:00 PM', '9:00 AM - 7:00 PM'),
+        ('9:00 AM - 8:00 PM', '9:00 AM - 8:00 PM'),
+        ('10:00 AM - 4:00 PM', '10:00 AM - 4:00 PM'),
+        ('10:00 AM - 5:00 PM', '10:00 AM - 5:00 PM'),
+        ('10:00 AM - 6:00 PM', '10:00 AM - 6:00 PM'),
+        ('11:00 AM - 4:00 PM', '11:00 AM - 4:00 PM'),
+        ('11:00 AM - 5:00 PM', '11:00 AM - 5:00 PM'),
+    ]
+    
+    monday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
+    tuesday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
+    wednesday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
+    thursday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
+    friday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
+    saturday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="10:00 AM - 4:00 PM")
+    sunday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="Closed")
+
+    content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
+        MultiFieldPanel([
+            FieldPanel('location_name'),
+            FieldPanel('address'),
+        ], heading="Location Information"),
+        FieldPanel('location_image'),
+        MultiFieldPanel([
+            FieldPanel('phone'),
+            FieldPanel('email'),
+        ], heading="Contact Information"),
+        FieldPanel('description'),
+        MultiFieldPanel([
+            FieldPanel('monday_hours'),
+            FieldPanel('tuesday_hours'),
+            FieldPanel('wednesday_hours'),
+            FieldPanel('thursday_hours'),
+            FieldPanel('friday_hours'),
+            FieldPanel('saturday_hours'),
+            FieldPanel('sunday_hours'),
+        ], heading="Opening Hours", classname="collapsible"),
+    ]
+
+    # Constrain parent pages to only LocationsPage
+    parent_page_types = ['home.LocationsPage']
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        # Sync with booking Location model when page is live
+        if self.live:
+            self.sync_to_booking_location()
+    
+    def sync_to_booking_location(self):
+        """Create/update corresponding Location in booking app"""
+        from booking.models import Location as BookingLocation
+        
+        if not self.location_name:
+            return  # Need location name for booking location
+            
+        # Get or create booking location
+        booking_location, created = BookingLocation.objects.get_or_create(
+            location_page=self,
+            defaults={
+                'name': self.location_name,
+                'address': self.address,
+                'phone': self.phone,
+                'email': self.email,
+                'monday_hours': self.monday_hours,
+                'tuesday_hours': self.tuesday_hours,
+                'wednesday_hours': self.wednesday_hours,
+                'thursday_hours': self.thursday_hours,
+                'friday_hours': self.friday_hours,
+                'saturday_hours': self.saturday_hours,
+                'sunday_hours': self.sunday_hours,
+            }
+        )
+        
+        # Update fields if not created
+        if not created:
+            booking_location.name = self.location_name
+            booking_location.address = self.address
+            booking_location.phone = self.phone
+            booking_location.email = self.email
+            booking_location.monday_hours = self.monday_hours
+            booking_location.tuesday_hours = self.tuesday_hours
+            booking_location.wednesday_hours = self.wednesday_hours
+            booking_location.thursday_hours = self.thursday_hours
+            booking_location.friday_hours = self.friday_hours
+            booking_location.saturday_hours = self.saturday_hours
+            booking_location.sunday_hours = self.sunday_hours
+            booking_location.save()
+    
+    def unpublish(self, *args, **kwargs):
+        """Handle unpublishing of location page"""
+        result = super().unpublish(*args, **kwargs)
+        
+        # Note: We don't delete booking location on unpublish since
+        # it might be referenced by employees and bookings
+        # Instead, we could add an is_active field if needed
+            
+        return result
+
+    @property
+    def display_name(self):
+        """Primary display name for location"""
+        return self.location_name or self.title
+    
+    def __str__(self):
+        return self.display_name
+    
+    class Meta:
+        verbose_name = "Location Page"

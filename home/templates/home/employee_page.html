@@ -66,10 +66,10 @@
                                 </div>
                             {% endif %}
                             
-                            {% if page.location %}
+                            {% if page.work_location %}
                                 <div class="col-sm-6 mb-2">
                                     <strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong><br>
-                                    {{ page.location.name }}
+                                    {{ page.work_location.name }}
                                 </div>
                             {% endif %}
                         </div>
@@ -93,7 +93,7 @@
                                 </a>
                             {% endif %}
                             
-                            {% if page.location %}
+                            {% if page.work_location %}
                                 <a href="#" class="btn btn-outline-primary" onclick="alert('Booking system integration coming soon!')">
                                     <i class="fas fa-calendar-alt me-2"></i>
                                     Book Appointment

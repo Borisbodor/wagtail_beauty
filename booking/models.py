@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from wagtail.models import Page
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, TabbedInterface, ObjectList
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.snippets.models import register_snippet
 from wagtail.fields import RichTextField, StreamField
 from wagtail import blocks
@@ -14,12 +14,43 @@ from modelcluster.fields import ParentalKey
 from home.models import HeroMixin, ServicesGridBlock, FeaturesGridBlock, CallToActionBlock, TextBlock, ImageGalleryBlock
 
 
+# ============================================================================
+# BOOKING LOCATION MODEL - Synced with Page-based Location System
+# ============================================================================
+# 
+# This Location model is used for booking functionality and stays synced
+# with the page-based LocationPage system in home/models.py.
+# 
+# The page system (LocationPage) handles:
+# - Public location profiles and content management  
+# - Rich descriptions, images, full information pages
+# 
+# This model handles:
+# - Booking form dropdowns and selections
+# - Employee location assignments
+# - Internal operational data (hours, contact info)
+# 
+# They stay in sync automatically when locations are published/unpublished.
+
 @register_snippet
 class Location(models.Model):
+    """
+    Location model for booking functionality.
+    Synced with LocationPage from home app.
+    """
     name = models.CharField(max_length=100, help_text="Location name (e.g. 'Downtown Salon')")
     address = models.TextField(help_text="Full address of this location")
     phone = models.CharField(max_length=20, blank=True, help_text="Contact phone number")
     email = models.EmailField(blank=True, help_text="Contact email")
+    
+    # Reference to the page (optional, for sync)
+    location_page = models.ForeignKey(
+        'wagtailcore.Page',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Connected location page (auto-set)"
+    )
     
     HOUR_CHOICES = [
         ('Closed', 'Closed'),
@@ -50,6 +81,7 @@ class Location(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     panels = [
+        FieldPanel('location_page'),  # Readonly - shows connected page
         FieldPanel('name'),
         FieldPanel('address'),
         MultiFieldPanel([
@@ -314,15 +346,10 @@ class BookingPage(HeroMixin, Page):
     )
 
     content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
         FieldPanel('content'),
         FieldPanel('thank_you_text'),
     ]
-    
-    # Use tabbed interface: Content tab + Hero tab
-    edit_handler = TabbedInterface([
-        ObjectList(content_panels, heading='Content'),
-        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
-    ])
 
     def serve(self, request):
         from .forms import BookingForm

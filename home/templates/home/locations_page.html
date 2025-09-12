@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-locations{% endblock %}
+
+{% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header %}
+    {% include 'includes/hero_section.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 mb-4">{{ page.title }}</h1>
+            
+            {% if page.intro %}
+                <div class="lead mb-5">
+                    {{ page.intro|richtext }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        {% for location_page in page.get_children.live %}
+            {% with location=location_page.specific %}
+                <div class="col-md-6 col-xl-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if location.location_image %}
+                            <div class="card-img-top overflow-hidden" style="height: 250px;">
+                                {% image location.location_image fill-400x250 as location_img %}
+                                <img src="{{ location_img.url }}" alt="{{ location.display_name }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ location.display_name }}</h5>
+                            
+                            {% if location.address %}
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    {{ location.address|linebreaks|truncatewords:10 }}
+                                </p>
+                            {% endif %}
+                            
+                            {% if location.phone %}
+                                <p class="small text-secondary mb-2">
+                                    <i class="fas fa-phone me-1"></i>
+                                    {{ location.phone }}
+                                </p>
+                            {% endif %}
+                            
+                            <!-- Sample hours display -->
+                            <div class="small text-secondary mb-3">
+                                <i class="fas fa-clock me-1"></i>
+                                {% if location.monday_hours != "Closed" %}
+                                    Mon-Fri: {{ location.monday_hours }}
+                                {% else %}
+                                    Hours vary - see details
+                                {% endif %}
+                            </div>
+                            
+                            {% if location.description %}
+                                <div class="card-text flex-grow-1">
+                                    {{ location.description|richtext|truncatewords_html:15 }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-auto pt-3">
+                                <a href="{% pageurl location %}" class="btn btn-outline-primary btn-sm">
+                                    View Location
+                                    <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                                
+                                {% if location.phone %}
+                                    <a href="tel:{{ location.phone }}" class="btn btn-outline-secondary btn-sm ms-2">
+                                        <i class="fas fa-phone me-1"></i>
+                                        Call
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endwith %}
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+                    <h3>No locations added yet</h3>
+                    <p class="text-muted">Location profiles will appear here once they are added to the CMS.</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Call to action -->
+    <div class="row mt-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <div class="bg-light p-4 rounded">
+                <h3>Ready to visit us?</h3>
+                <p class="text-muted mb-3">Book your appointment at any of our convenient locations.</p>
+                <a href="/book/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Book Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
