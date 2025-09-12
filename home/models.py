@@ -4,6 +4,7 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
+from wagtail.images import get_image_model_string
 
 
 class ServiceBlock(blocks.StructBlock):
@@ -138,3 +139,135 @@ class HomePage(Page):
     content_panels = Page.content_panels + [
         FieldPanel('content'),
     ]
+
+
+class EmployeesPage(Page):
+    """
+    Parent page for all employee pages. This page displays a listing of all employees.
+    """
+    intro = RichTextField(blank=True, help_text="Introduction text for the employees page")
+    
+    content_panels = Page.content_panels + [
+        FieldPanel('intro'),
+    ]
+
+    # Constrain child pages to only EmployeePage
+    subpage_types = ['home.EmployeePage']
+    
+    class Meta:
+        verbose_name = "Employees Page"
+
+
+class EmployeePage(Page):
+    """
+    Individual employee page. Can only be created as a child of EmployeesPage.
+    """
+    # Import Location model from booking app
+    from booking.models import Location
+    
+    # Employee fields as requested
+    first_name = models.CharField(max_length=100, help_text="Employee's first name")
+    last_name = models.CharField(max_length=100, help_text="Employee's last name")
+    full_name = models.CharField(max_length=200, blank=True, help_text="Full display name (auto-generated if empty)") 
+    employee_image = models.ForeignKey(
+        get_image_model_string(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text="Employee photo"
+    )
+    email = models.EmailField(blank=True, help_text="Employee's email address")
+    job_title = models.CharField(max_length=200, help_text="Employee's job title/position")
+    description = RichTextField(blank=True, help_text="Employee's bio, specialties, or description")
+    location = models.ForeignKey(
+        'booking.Location', 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Employee's primary work location"
+    )
+
+    content_panels = Page.content_panels + [
+        MultiFieldPanel([
+            FieldPanel('first_name'),
+            FieldPanel('last_name'),
+            FieldPanel('full_name'),
+        ], heading="Name Information"),
+        FieldPanel('employee_image'),
+        MultiFieldPanel([
+            FieldPanel('email'),
+            FieldPanel('job_title'),
+        ], heading="Contact & Position"),
+        FieldPanel('description'),
+        FieldPanel('location'),
+    ]
+
+    # Constrain parent pages to only EmployeesPage
+    parent_page_types = ['home.EmployeesPage']
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate full_name if empty
+        if not self.full_name:
+            self.full_name = f"{self.first_name} {self.last_name}".strip()
+        super().save(*args, **kwargs)
+        
+        # Sync with booking Employee model when page is live
+        if self.live:
+            self.sync_to_booking_employee()
+    
+    def sync_to_booking_employee(self):
+        """Create/update corresponding Employee in booking app"""
+        from booking.models import Employee as BookingEmployee
+        
+        if not self.location:
+            return  # Need location for booking employee
+            
+        # Get or create booking employee
+        booking_employee, created = BookingEmployee.objects.get_or_create(
+            employee_page=self,
+            defaults={
+                'first_name': self.first_name,
+                'last_name': self.last_name,
+                'location': self.location,
+                'is_active': True,
+            }
+        )
+        
+        # Update fields if not created
+        if not created:
+            booking_employee.first_name = self.first_name
+            booking_employee.last_name = self.last_name
+            booking_employee.location = self.location
+            booking_employee.save()
+    
+    def unpublish(self, *args, **kwargs):
+        """Deactivate booking employee when page is unpublished"""
+        result = super().unpublish(*args, **kwargs)
+        
+        # Deactivate corresponding booking employee
+        from booking.models import Employee as BookingEmployee
+        try:
+            booking_employee = BookingEmployee.objects.get(employee_page=self)
+            booking_employee.is_active = False
+            booking_employee.save()
+        except BookingEmployee.DoesNotExist:
+            pass
+            
+        return result
+    
+    @property
+    def display_name(self):
+        """Primary display name: first_name + last_name"""
+        return f"{self.first_name} {self.last_name}".strip()
+    
+    @property 
+    def short_name(self):
+        """Short name for links/breadcrumbs: last_name"""
+        return self.last_name
+        
+    def __str__(self):
+        return self.display_name
+    
+    class Meta:
+        verbose_name = "Employee Page"

@@ -19,10 +19,11 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'location', 'email', 'phone', 'is_active', 'get_services_list')
+    list_display = ('full_name', 'location', 'is_active', 'get_services_list')
     list_filter = ('location', 'is_active', 'services', 'created_at')
-    search_fields = ('first_name', 'last_name', 'email')
+    search_fields = ('first_name', 'last_name')
     filter_horizontal = ('services',)
+    readonly_fields = ('employee_page',)
 
 
 @admin.register(FormSubmission)

@@ -49,9 +49,10 @@ python manage.py runserver
 
 ## 🖼️ About Media Files (Images)
 
-- Images are stored in `media/` folder and **included in Git** 
+- Images are stored in `media/` folder but **NOT included in Git** 
 - Upload images through admin panel at `http://localhost:8000/admin`
-- All team members automatically get the same images when pulling changes
+- Share images between team members via cloud storage (Google Drive, Dropbox, etc.)
+- Each developer maintains their own local `media/` folder
 
 ## 🔄 Daily Workflow
 
@@ -69,9 +70,9 @@ python manage.py runserver         # Start working
 python manage.py makemigrations
 python manage.py migrate
 
-# After uploading images through admin
-git add media/
-git commit -m "Added new beauty salon images"
+# After modifying models or adding new features  
+git add .
+git commit -m "Updated feature or content"
 ```
 
 ## 📦 Project Structure

@@ -124,41 +124,47 @@ class Service(models.Model):
         return ", ".join([loc.name for loc in self.locations.all()])
 
 
+# ============================================================================
+# BOOKING EMPLOYEE MODEL - Synced with Page-based Employee System
+# ============================================================================
+# 
+# This Employee model is used for booking functionality and stays synced
+# with the page-based EmployeePage system in home/models.py.
+# 
+# The page system (EmployeePage) handles:
+# - Public employee profiles and content management
+# - Rich descriptions, images, full bios
+# 
+# This model handles:
+# - Booking form dropdowns and selections
+# - Service assignments and scheduling
+# - Internal operational data
+# 
+# They stay in sync automatically when employees are published/unpublished.
+
 @register_snippet
 class Employee(models.Model):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50) 
-    email = models.EmailField(blank=True, help_text="Employee email (optional)")
-    phone = models.CharField(max_length=20, blank=True, help_text="Employee phone (optional)")
+    """
+    Simplified Employee model for booking functionality.
+    Synced with EmployeePage from home app.
+    """
+    # Basic info (synced from EmployeePage)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100) 
     
+    # Reference to the page (optional, for sync)
+    employee_page = models.ForeignKey(
+        'wagtailcore.Page',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Connected employee page (auto-set)"
+    )
+    
+    # Booking-specific fields
     location = models.ForeignKey(Location, on_delete=models.CASCADE, help_text="Primary work location")
     services = models.ManyToManyField(Service, help_text="Services this employee can perform")
-    
-    bio = models.TextField(blank=True, help_text="Brief bio or specialties (optional)")
-    hire_date = models.DateField(null=True, blank=True, help_text="Date hired (optional)")
-    is_active = models.BooleanField(default=True, help_text="Is this employee currently working?")
-    
-      
-    SCHEDULE_CHOICES = [
-        ('Off', 'Off'),
-        ('8:00 AM - 4:00 PM', '8:00 AM - 4:00 PM'),
-        ('8:00 AM - 5:00 PM', '8:00 AM - 5:00 PM'),
-        ('9:00 AM - 5:00 PM', '9:00 AM - 5:00 PM'),
-        ('9:00 AM - 6:00 PM', '9:00 AM - 6:00 PM'),
-        ('10:00 AM - 6:00 PM', '10:00 AM - 6:00 PM'),
-        ('11:00 AM - 7:00 PM', '11:00 AM - 7:00 PM'),
-        ('12:00 PM - 8:00 PM', '12:00 PM - 8:00 PM'),
-        ('9:00 AM - 3:00 PM', '9:00 AM - 3:00 PM'),
-        ('10:00 AM - 4:00 PM', '10:00 AM - 4:00 PM'),
-    ]
-    
-    monday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="9:00 AM - 5:00 PM")
-    tuesday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="9:00 AM - 5:00 PM")
-    wednesday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="9:00 AM - 5:00 PM")
-    thursday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="9:00 AM - 5:00 PM")
-    friday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="9:00 AM - 5:00 PM")
-    saturday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="Off")
-    sunday_schedule = models.CharField(max_length=50, choices=SCHEDULE_CHOICES, blank=True, default="Off")
+    is_active = models.BooleanField(default=True, help_text="Available for bookings?")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,27 +175,10 @@ class Employee(models.Model):
             FieldPanel('last_name'),
         ], heading="Name"),
         MultiFieldPanel([
-            FieldPanel('email'),
-            FieldPanel('phone'),
-        ], heading="Contact"),
-        MultiFieldPanel([
             FieldPanel('location'),
             FieldPanel('services'),
         ], heading="Work Assignment"),
-        FieldPanel('bio'),
-        MultiFieldPanel([
-            FieldPanel('hire_date'),
-            FieldPanel('is_active'),
-        ], heading="Employment"),
-        MultiFieldPanel([
-            FieldPanel('monday_schedule'),
-            FieldPanel('tuesday_schedule'),
-            FieldPanel('wednesday_schedule'),
-            FieldPanel('thursday_schedule'),
-            FieldPanel('friday_schedule'),
-            FieldPanel('saturday_schedule'),
-            FieldPanel('sunday_schedule'),
-        ], heading="Work Schedule"),
+        FieldPanel('is_active'),
     ]
 
     class Meta:

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-employee{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Back to employees link -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% pageurl page.get_parent %}">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            All Employees
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ page.short_name }}</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <!-- Employee Image -->
+                <div class="col-md-4 mb-4">
+                    {% if page.employee_image %}
+                        <div class="text-center">
+                            {% image page.employee_image fill-400x400 as employee_img %}
+                            <img src="{{ employee_img.url }}" alt="{{ page.display_name }}" 
+                                 class="img-fluid rounded shadow" 
+                                 style="max-width: 300px; width: 100%;">
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <div class="bg-light rounded shadow d-flex align-items-center justify-content-center" 
+                                 style="height: 300px; max-width: 300px; width: 100%; margin: 0 auto;">
+                                <i class="fas fa-user fa-4x text-muted"></i>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Employee Information -->
+                <div class="col-md-8">
+                    <div class="mb-4">
+                        <h1 class="display-5 mb-2">{{ page.full_name|default:page.display_name }}</h1>
+                        
+                        {% if page.job_title %}
+                            <h2 class="h4 text-primary mb-3">{{ page.job_title }}</h2>
+                        {% endif %}
+                        
+                        <!-- Contact and Location Info -->
+                        <div class="row mb-4">
+                            {% if page.email %}
+                                <div class="col-sm-6 mb-2">
+                                    <strong><i class="fas fa-envelope me-2"></i>Email:</strong><br>
+                                    <a href="mailto:{{ page.email }}" class="text-decoration-none">
+                                        {{ page.email }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            
+                            {% if page.location %}
+                                <div class="col-sm-6 mb-2">
+                                    <strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong><br>
+                                    {{ page.location.name }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Description/Bio -->
+                        {% if page.description %}
+                            <div class="mb-4">
+                                <h3 class="h5 mb-3">About {{ page.first_name }}</h3>
+                                <div class="text-muted">
+                                    {{ page.description|richtext }}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if page.email %}
+                                <a href="mailto:{{ page.email }}" class="btn btn-primary">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Email {{ page.first_name }}
+                                </a>
+                            {% endif %}
+                            
+                            {% if page.location %}
+                                <a href="#" class="btn btn-outline-primary" onclick="alert('Booking system integration coming soon!')">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Book Appointment
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
