@@ -508,3 +508,188 @@ class LocationPage(HeroMixin, Page):
     
     class Meta:
         verbose_name = "Location Page"
+
+
+# ============================================================================
+# SERVICES PAGE MODELS - Page-based Service Management
+# ============================================================================
+
+class ServicesPage(HeroMixin, Page):
+    """Listing page for all services"""
+    intro = RichTextField(
+        blank=True, 
+        help_text="Introduction text for the services page"
+    )
+    
+    content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
+        FieldPanel('intro'),
+    ]
+    
+    # Only ServicePage can be created under this page
+    subpage_types = ['home.ServicePage']
+    
+    class Meta:
+        verbose_name = "Services Page"
+
+
+class ServicePage(HeroMixin, Page):
+    """Individual service detail page"""
+    
+    # Service basic info
+    service_name = models.CharField(
+        max_length=100, 
+        help_text="Service name (e.g. 'Haircut & Style')"
+    )
+    service_description = RichTextField(
+        blank=True,
+        help_text="Detailed description of the service"
+    )
+    service_image = models.ForeignKey(
+        get_image_model_string(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text="Service photo or promotional image"
+    )
+    
+    # Pricing and duration
+    price = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        help_text="Price in dollars (e.g. 45.00)"
+    )
+    duration_minutes = models.PositiveIntegerField(
+        help_text="How long does this service take? (in minutes)"
+    )
+    
+    # Category
+    CATEGORY_CHOICES = [
+        ('hair', 'Hair Services'),
+        ('nails', 'Nail Services'),
+        ('skincare', 'Skincare & Facials'),
+        ('massage', 'Massage & Spa'),
+        ('makeup', 'Makeup Services'),
+        ('other', 'Other Services'),
+    ]
+    service_category = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_CHOICES, 
+        default='other',
+        help_text="Service category for organization"
+    )
+    
+    # Availability
+    available_locations = models.ManyToManyField(
+        'booking.Location',
+        blank=True,
+        help_text="Which locations offer this service?"
+    )
+    
+    content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
+        
+        MultiFieldPanel([
+            FieldPanel('service_name'),
+            FieldPanel('service_description'),
+            FieldPanel('service_image'),
+        ], heading="Service Information"),
+        
+        MultiFieldPanel([
+            FieldPanel('price'),
+            FieldPanel('duration_minutes'),
+            FieldPanel('service_category'),
+        ], heading="Pricing & Details"),
+        
+        FieldPanel('available_locations'),
+    ]
+    
+    # Only allow under ServicesPage
+    parent_page_types = ['home.ServicesPage']
+    
+    def save(self, *args, **kwargs):
+        """Auto-fill service_name if empty and sync to booking system"""
+        if not self.service_name:
+            self.service_name = self.title
+        
+        super().save(*args, **kwargs)
+        
+        # Sync to booking system when published
+        if self.live:
+            self.sync_to_booking_service()
+    
+    def sync_to_booking_service(self):
+        """Sync this page to booking.Service model"""
+        from booking.models import Service as BookingService
+        
+        if not self.service_name:
+            return
+        
+        # Create or update booking service
+        booking_service, created = BookingService.objects.get_or_create(
+            service_page=self,
+            defaults={
+                'name': self.service_name,
+                'description': self.service_description or '',
+                'price': self.price,
+                'duration_minutes': self.duration_minutes,
+                'category': self.service_category,
+                'is_active': True,
+            }
+        )
+        
+        if not created:
+            # Update existing booking service
+            booking_service.name = self.service_name
+            booking_service.description = self.service_description or ''
+            booking_service.price = self.price
+            booking_service.duration_minutes = self.duration_minutes
+            booking_service.category = self.service_category
+            booking_service.save()
+            
+        # Sync locations
+        if self.available_locations.exists():
+            booking_service.locations.set(self.available_locations.all())
+    
+    def unpublish(self, *args, **kwargs):
+        """Deactivate booking service when unpublished"""
+        from booking.models import Service as BookingService
+        
+        try:
+            booking_service = BookingService.objects.get(service_page=self)
+            booking_service.is_active = False
+            booking_service.save()
+        except BookingService.DoesNotExist:
+            pass
+            
+        super().unpublish(*args, **kwargs)
+    
+    @property
+    def display_name(self):
+        """Primary display name for service"""
+        return self.service_name or self.title
+    
+    @property
+    def duration_display(self):
+        """Human-readable duration"""
+        if self.duration_minutes < 60:
+            return f"{self.duration_minutes} min"
+        else:
+            hours = self.duration_minutes // 60
+            minutes = self.duration_minutes % 60
+            if minutes:
+                return f"{hours}h {minutes}min"
+            else:
+                return f"{hours}h"
+    
+    @property
+    def price_display(self):
+        """Formatted price display"""
+        return f"${self.price}"
+    
+    def __str__(self):
+        return f"{self.display_name} ({self.price_display})"
+    
+    class Meta:
+        verbose_name = "Service Page"

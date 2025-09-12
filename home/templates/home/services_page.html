@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-services{% endblock %}
+
+{% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header %}
+    {% include 'includes/hero_section.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    {% if page.intro %}
+        <div class="row mb-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <div class="lead">{{ page.intro|richtext }}</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row" id="services-grid">
+        {% for service_page in page.get_children.live %}
+            {% with service=service_page.specific %}
+                <div class="col-md-6 col-xl-4 mb-4 service-card" {% if forloop.counter > 3 %}style="display: none;"{% endif %}>
+                    <div class="card h-100 shadow-sm">
+                        {% if service.service_image %}
+                            <div class="card-img-top overflow-hidden" style="height: 220px;">
+                                {% image service.service_image fill-400x220 as service_img %}
+                                <img src="{{ service_img.url }}" alt="{{ service.display_name }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ service.display_name }}</h5>
+                                <span class="badge bg-primary">{{ service.get_service_category_display }}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-success mb-0">{{ service.price_display }}</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ service.duration_display }}
+                                </small>
+                            </div>
+                            
+                            {% if service.available_locations.exists %}
+                                <div class="small text-secondary mb-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    Available at: 
+                                    {% for location in service.available_locations.all %}
+                                        {{ location.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mt-auto pt-3">
+                                <a href="{% pageurl service %}" class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                    <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                                
+                                <a href="/book/" class="btn btn-primary btn-sm ms-2">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Book Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endwith %}
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-spa fa-3x text-muted mb-3"></i>
+                    <h3>No services added yet</h3>
+                    <p class="text-muted">Service offerings will appear here once they are added to the CMS.</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Show More Button -->
+    {% if page.get_children.live.count > 3 %}
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button class="btn btn-outline-primary btn-lg" id="show-more-services" onclick="toggleServices()">
+                    <i class="fas fa-chevron-down me-2"></i>
+                    Show More Services ({{ page.get_children.live.count|add:"-3" }} more)
+                </button>
+                <button class="btn btn-outline-primary btn-lg" id="show-less-services" onclick="toggleServices()" style="display: none;">
+                    <i class="fas fa-chevron-up me-2"></i>
+                    Show Less
+                </button>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Call to action -->
+    <div class="row mt-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <div class="bg-light p-4 rounded">
+                <h3 class="mb-3">Ready to Book?</h3>
+                <p class="mb-3">Experience our premium services at any of our convenient locations.</p>
+                <a href="/book/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Book Your Appointment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleServices() {
+    const hiddenCards = document.querySelectorAll('.service-card[style*="display: none"]');
+    const visibleExtraCards = document.querySelectorAll('.service-card:nth-child(n+4):not([style*="display: none"])');
+    const showMoreBtn = document.getElementById('show-more-services');
+    const showLessBtn = document.getElementById('show-less-services');
+    
+    if (hiddenCards.length > 0) {
+        // Show all hidden cards
+        hiddenCards.forEach(card => {
+            card.style.display = 'block';
+            card.style.animation = 'fadeInUp 0.5s ease-in-out';
+        });
+        showMoreBtn.style.display = 'none';
+        showLessBtn.style.display = 'inline-block';
+    } else {
+        // Hide cards after the first 3
+        visibleExtraCards.forEach(card => {
+            card.style.display = 'none';
+        });
+        showMoreBtn.style.display = 'inline-block';
+        showLessBtn.style.display = 'none';
+    }
+}
+</script>
+
+<style>
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock content %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block body_class %}template-service{% endblock %}
+
+{% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header %}
+    {% include 'includes/hero_section.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item">
+                        <a href="{% pageurl page.get_parent %}">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            All Services
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ page.display_name }}</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <!-- Service Info -->
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h1 class="display-5 mb-2">{{ page.display_name }}</h1>
+                            <span class="badge bg-primary fs-6">{{ page.get_service_category_display }}</span>
+                        </div>
+                        <div class="text-end">
+                            <div class="h2 text-success mb-1">{{ page.price_display }}</div>
+                            <div class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ page.duration_display }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if page.service_description %}
+                        <div class="mb-4">
+                            {{ page.service_description|richtext }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Availability -->
+                    {% if page.available_locations.exists %}
+                        <h3 class="h5 mb-3">Available Locations</h3>
+                        <div class="row mb-4">
+                            {% for location in page.available_locations.all %}
+                                <div class="col-sm-6 mb-3">
+                                    <div class="card border-0 bg-light h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ location.name }}</h6>
+                                            <p class="card-text small text-muted mb-2">{{ location.address|linebreaksbr|truncatewords:8 }}</p>
+                                            {% if location.phone %}
+                                                <p class="small mb-1">
+                                                    <i class="fas fa-phone me-1"></i>
+                                                    <a href="tel:{{ location.phone }}">{{ location.phone }}</a>
+                                                </p>
+                                            {% endif %}
+                                            {% if location.location_page %}
+                                                <a href="{% pageurl location.location_page.specific %}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    View Location
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Action buttons -->
+                    <div class="mt-4">
+                        <a href="/book/" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Book This Service
+                        </a>
+                        <a href="{% pageurl page.get_parent %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            All Services
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Service Image -->
+                <div class="col-md-4">
+                    {% if page.service_image %}
+                        <div class="sticky-top" style="top: 2rem;">
+                            <div class="rounded shadow-lg overflow-hidden mb-4">
+                                {% image page.service_image fill-400x300 as service_img %}
+                                <img src="{{ service_img.url }}" alt="{{ page.display_name }}" class="img-fluid">
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Service info card when no image -->
+                        <div class="sticky-top" style="top: 2rem;">
+                            <div class="card shadow">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-spa fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">{{ page.display_name }}</h5>
+                                    <p class="h4 text-success">{{ page.price_display }}</p>
+                                    <p class="text-muted">{{ page.duration_display }}</p>
+                                    <a href="/book/" class="btn btn-primary w-100">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        Book Now
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Services -->
+    {% if page.get_parent.get_children.live.count > 1 %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <hr class="my-5">
+                <h3 class="text-center mb-4">Other Services</h3>
+                <div class="row">
+                    {% for service_page in page.get_parent.get_children.live %}
+                        {% with service=service_page.specific %}
+                            {% if service.pk != page.pk %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100">
+                                        {% if service.service_image %}
+                                            <div class="card-img-top overflow-hidden" style="height: 180px;">
+                                                {% image service.service_image fill-300x180 as related_img %}
+                                                <img src="{{ related_img.url }}" alt="{{ service.display_name }}" class="img-fluid w-100 h-100" style="object-fit: cover;">
+                                            </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ service.display_name }}</h6>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="text-success fw-bold">{{ service.price_display }}</span>
+                                                <small class="text-muted">{{ service.duration_display }}</small>
+                                            </div>
+                                            <a href="{% pageurl service %}" class="btn btn-outline-primary btn-sm mt-2">View Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock content %}

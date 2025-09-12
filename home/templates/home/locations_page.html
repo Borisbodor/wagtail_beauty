@@ -23,10 +23,10 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row" id="locations-grid">
         {% for location_page in page.get_children.live %}
             {% with location=location_page.specific %}
-                <div class="col-md-6 col-xl-4 mb-4">
+                <div class="col-md-6 col-xl-4 mb-4 location-card" {% if forloop.counter > 3 %}style="display: none;"{% endif %}>
                     <div class="card h-100 shadow-sm">
                         {% if location.location_image %}
                             <div class="card-img-top overflow-hidden" style="height: 250px;">
@@ -96,6 +96,22 @@
         {% endfor %}
     </div>
     
+    <!-- Show More Button -->
+    {% if page.get_children.live.count > 3 %}
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button class="btn btn-outline-primary btn-lg" id="show-more-locations" onclick="toggleLocations()">
+                    <i class="fas fa-chevron-down me-2"></i>
+                    Show More Locations ({{ page.get_children.live.count|add:"-3" }} more)
+                </button>
+                <button class="btn btn-outline-primary btn-lg" id="show-less-locations" onclick="toggleLocations()" style="display: none;">
+                    <i class="fas fa-chevron-up me-2"></i>
+                    Show Less
+                </button>
+            </div>
+        </div>
+    {% endif %}
+    
     <!-- Call to action -->
     <div class="row mt-5">
         <div class="col-lg-8 mx-auto text-center">
@@ -110,4 +126,43 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleLocations() {
+    const hiddenCards = document.querySelectorAll('.location-card[style*="display: none"]');
+    const visibleExtraCards = document.querySelectorAll('.location-card:nth-child(n+4):not([style*="display: none"])');
+    const showMoreBtn = document.getElementById('show-more-locations');
+    const showLessBtn = document.getElementById('show-less-locations');
+    
+    if (hiddenCards.length > 0) {
+        // Show all hidden cards
+        hiddenCards.forEach(card => {
+            card.style.display = 'block';
+            card.style.animation = 'fadeInUp 0.5s ease-in-out';
+        });
+        showMoreBtn.style.display = 'none';
+        showLessBtn.style.display = 'inline-block';
+    } else {
+        // Hide cards after the first 3
+        visibleExtraCards.forEach(card => {
+            card.style.display = 'none';
+        });
+        showMoreBtn.style.display = 'inline-block';
+        showLessBtn.style.display = 'none';
+    }
+}
+</script>
+
+<style>
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 {% endblock content %}

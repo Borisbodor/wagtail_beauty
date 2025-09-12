@@ -108,15 +108,24 @@ class Location(models.Model):
         return self.name
 
 
-@register_snippet  
+# Simplified Service model - synced with Page-based Service System
+@register_snippet
 class Service(models.Model):
-    name = models.CharField(max_length=100, help_text="Service name (e.g. 'Haircut & Style')")
-    description = models.TextField(help_text="Detailed description of the service")
-    price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Price in dollars (e.g. 45.00)")
-    duration_minutes = models.PositiveIntegerField(help_text="How long does this service take? (in minutes)")
+    name = models.CharField(max_length=100, help_text="Service name (auto-synced from service page)")
+    description = models.TextField(help_text="Service description (auto-synced)")
+    price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Service price (auto-synced)")
+    duration_minutes = models.PositiveIntegerField(help_text="Service duration (auto-synced)")
+    
+    # Link to the ServicePage that manages this service
+    service_page = models.ForeignKey(
+        'wagtailcore.Page',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Connected service page (auto-set)"
+    )
     
     locations = models.ManyToManyField(Location, help_text="Which locations offer this service?")
-    
     
     CATEGORY_CHOICES = [
         ('hair', 'Hair Services'),
@@ -127,21 +136,26 @@ class Service(models.Model):
         ('other', 'Other Services'),
     ]
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
-    is_active = models.BooleanField(default=True, help_text="Uncheck to hide this service from booking")
+    is_active = models.BooleanField(default=True, help_text="Available for bookings?")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('description'),
+        MultiFieldPanel([
+            FieldPanel('name'),
+            FieldPanel('description'),
+        ], heading="Service Info", help_text="These are auto-synced from the service page"),
+        
         MultiFieldPanel([
             FieldPanel('price'),
             FieldPanel('duration_minutes'),
             FieldPanel('category'),
-        ], heading="Service Details"),
+        ], heading="Details"),
+        
         FieldPanel('locations'),
         FieldPanel('is_active'),
+        FieldPanel('service_page'),
     ]
 
     class Meta:
@@ -151,6 +165,10 @@ class Service(models.Model):
 
     def __str__(self):
         return f"{self.name} (${self.price})"
+    
+    @property
+    def full_name(self):
+        return self.name
         
     def get_locations_list(self):
         return ", ".join([loc.name for loc in self.locations.all()])
