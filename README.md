@@ -10,9 +10,9 @@ git clone <repository-url>
 cd beauty_salon
 
 # 2. Create and activate virtual environment
-python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS/Linux
+python -m venv beauty_venv
+beauty_venv\Scripts\activate          # Windows (Command Prompt/PowerShell)
+source beauty_venv/bin/activate       # macOS/Linux/WSL
 
 # 3. Install dependencies and setup database
 pip install -r requirements.txt
@@ -42,7 +42,7 @@ python manage.py runserver
 ### ❌ **NOT Committed to Git:**
 - **Database file** (`db.sqlite3`) - Each developer gets a fresh database
 - **Media uploads** (`media/` folder) - User-uploaded images
-- **Virtual environment** (`venv/` folder) - Created locally
+- **Virtual environment** (`beauty_venv/` folder) - Created locally
 - **Cache/compiled files** (`__pycache__/`, `*.pyc`)
 - **IDE settings** (`.vscode/`, `.idea/`)
 - **Environment variables** (`.env` files)
@@ -86,7 +86,7 @@ beauty_salon/
 │   ├── templates/       # App-specific templates
 │   └── static/         # App-specific static files
 ├── media/              # User uploads (not in Git)
-├── venv/               # Virtual environment (not in Git)
+├── beauty_venv/        # Virtual environment (not in Git)
 ├── db.sqlite3          # Database (not in Git)
 ├── requirements.txt    # Python dependencies
 └── manage.py          # Django management script
