@@ -3,15 +3,15 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from wagtail.models import Page
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, TabbedInterface, ObjectList
 from wagtail.snippets.models import register_snippet
 from wagtail.fields import RichTextField, StreamField
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
-# Import blocks from home app
-from home.models import HeroBlock, ServicesGridBlock, FeaturesGridBlock, CallToActionBlock, TextBlock, ImageGalleryBlock
+# Import blocks and mixins from home app
+from home.models import HeroMixin, ServicesGridBlock, FeaturesGridBlock, CallToActionBlock, TextBlock, ImageGalleryBlock
 
 
 @register_snippet
@@ -297,9 +297,8 @@ class BookingFormBlock(blocks.StructBlock):
         label = 'Booking Form'
 
 
-class BookingPage(Page):
+class BookingPage(HeroMixin, Page):
     content = StreamField([
-        ('hero', HeroBlock()),
         ('booking_form', BookingFormBlock()),
         ('services', ServicesGridBlock()),
         ('features', FeaturesGridBlock()),
@@ -318,6 +317,12 @@ class BookingPage(Page):
         FieldPanel('content'),
         FieldPanel('thank_you_text'),
     ]
+    
+    # Use tabbed interface: Content tab + Hero tab
+    edit_handler = TabbedInterface([
+        ObjectList(content_panels, heading='Content'),
+        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
+    ])
 
     def serve(self, request):
         from .forms import BookingForm

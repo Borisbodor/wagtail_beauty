@@ -3,7 +3,11 @@
 
 {% block body_class %}template-homepage{% endblock %}
 
-{% block header %}{% endblock %}
+{% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header %}
+    {% include 'includes/hero_section.html' %}
+{% endblock %}
 
 {% block content %}
     {% for block in page.content %}

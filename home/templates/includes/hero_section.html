@@ -1,0 +1,28 @@
+{% load wagtailimages_tags %}
+
+{# Only render hero section if explicitly enabled #}
+{% if page.show_hero %}
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-3 fw-bold mb-3">{{ page.hero_title|default:"Welcome to Beauty Salon" }}</h1>
+            <p class="lead mb-4">{{ page.hero_subtitle|default:"Transform your beauty with premium treatments" }}</p>
+            <div>
+                <a href="{% if page.hero_primary_button_url %}{{ page.hero_primary_button_url }}{% else %}/book/{% endif %}" 
+                   class="btn btn-light btn-lg me-3">{{ page.hero_primary_button_text|default:"Book Now" }}</a>
+                <a href="{% if page.hero_secondary_button_url %}{{ page.hero_secondary_button_url }}{% else %}/services/{% endif %}" 
+                   class="btn btn-outline-light btn-lg">{{ page.hero_secondary_button_text|default:"Services" }}</a>
+            </div>
+        </div>
+        <div class="col-lg-6 text-center">
+            {% if page.hero_image %}
+                <div class="hero-image-container">
+                    <div class="d-inline-block rounded-circle shadow-lg overflow-hidden" style="width: 350px; height: 350px;">
+                        {% image page.hero_image fill-350x350 class="img-fluid" %}
+                    </div>
+                </div>
+            {# If no hero image, render nothing (blank background) #}
+            {% endif %}
+        </div>
+    </div>
+{# If show_hero=False, render nothing (no header section) #}
+{% endif %}

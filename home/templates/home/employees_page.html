@@ -3,6 +3,12 @@
 
 {% block body_class %}template-employees{% endblock %}
 
+{% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header %}
+    {% include 'includes/hero_section.html' %}
+{% endblock %}
+
 {% block content %}
 <div class="container my-5">
     <div class="row">

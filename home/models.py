@@ -1,10 +1,95 @@
 from django.db import models
 from wagtail.models import Page
 from wagtail.fields import RichTextField, StreamField
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel, TabbedInterface, ObjectList
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.images import get_image_model_string
+
+
+class HeroMixin(models.Model):
+    """
+    Mixin that adds hero section fields to any page.
+    Pages can enable/disable the hero section and customize all hero content.
+    """
+    # Hero control
+    show_hero = models.BooleanField(
+        default=True, 
+        help_text="Show hero section at the top of this page"
+    )
+    
+    # Hero content fields (matching HeroBlock fields)
+    hero_title = models.CharField(
+        max_length=200, 
+        blank=True,
+        default="Welcome to Beauty Salon",
+        help_text="Main hero headline"
+    )
+    hero_subtitle = models.TextField(
+        blank=True,
+        default="Transform your beauty with premium treatments",
+        help_text="Subtitle text below the main headline"
+    )
+    hero_image = models.ForeignKey(
+        get_image_model_string(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text="Hero image (overlays background)"
+    )
+    hero_background_image = models.ForeignKey(
+        get_image_model_string(),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text="Background image for hero section"
+    )
+    
+    # Hero buttons
+    hero_primary_button_text = models.CharField(
+        max_length=50,
+        blank=True,
+        default="Book Now",
+        help_text="Primary button text"
+    )
+    hero_primary_button_url = models.URLField(
+        blank=True,
+        help_text="Primary button URL"
+    )
+    hero_secondary_button_text = models.CharField(
+        max_length=50,
+        blank=True,
+        default="Services",
+        help_text="Secondary button text"
+    )
+    hero_secondary_button_url = models.URLField(
+        blank=True,
+        help_text="Secondary button URL"
+    )
+    
+    # Admin panel configuration for hero fields
+    hero_panels = [
+        FieldPanel('show_hero'),
+        MultiFieldPanel([
+            FieldPanel('hero_title'),
+            FieldPanel('hero_subtitle'),
+        ], heading="Hero Text"),
+        MultiFieldPanel([
+            FieldPanel('hero_image'),
+            FieldPanel('hero_background_image'),
+        ], heading="Hero Images"),
+        MultiFieldPanel([
+            FieldPanel('hero_primary_button_text'),
+            FieldPanel('hero_primary_button_url'),
+            FieldPanel('hero_secondary_button_text'),
+            FieldPanel('hero_secondary_button_url'),
+        ], heading="Hero Buttons"),
+    ]
+    
+    class Meta:
+        abstract = True
 
 
 class ServiceBlock(blocks.StructBlock):
@@ -30,20 +115,8 @@ class FeatureBlock(blocks.StructBlock):
         label = 'Feature'
 
 
-class HeroBlock(blocks.StructBlock):
-    title = blocks.CharBlock(max_length=200, default="Welcome to Beauty Salon")
-    subtitle = blocks.TextBlock(default="Transform your beauty with premium treatments")
-    hero_image = ImageChooserBlock(required=False)
-    background_image = ImageChooserBlock(required=False)
-    primary_button_text = blocks.CharBlock(max_length=50, default="Book Now")
-    primary_button_url = blocks.URLBlock(required=False)
-    secondary_button_text = blocks.CharBlock(max_length=50, default="Services")
-    secondary_button_url = blocks.URLBlock(required=False)
-    
-    class Meta:
-        template = 'blocks/hero_block.html'
-        icon = 'image'
-        label = 'Hero'
+# HeroBlock removed - now handled by HeroMixin on all pages
+# Hero functionality is available via the "Hero Section" tab in page admin
 
 
 class ServicesGridBlock(blocks.StructBlock):
@@ -126,9 +199,8 @@ class ImageGalleryBlock(blocks.StructBlock):
         label = 'Gallery'
 
 
-class HomePage(Page):
+class HomePage(HeroMixin, Page):
     content = StreamField([
-        ('hero', HeroBlock()),
         ('services', ServicesGridBlock()),
         ('features', FeaturesGridBlock()),
         ('cta', CallToActionBlock()),
@@ -139,9 +211,15 @@ class HomePage(Page):
     content_panels = Page.content_panels + [
         FieldPanel('content'),
     ]
+    
+    # Use tabbed interface: Content tab + Hero tab
+    edit_handler = TabbedInterface([
+        ObjectList(content_panels, heading='Content'),
+        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
+    ])
 
 
-class EmployeesPage(Page):
+class EmployeesPage(HeroMixin, Page):
     """
     Parent page for all employee pages. This page displays a listing of all employees.
     """
@@ -154,11 +232,17 @@ class EmployeesPage(Page):
     # Constrain child pages to only EmployeePage
     subpage_types = ['home.EmployeePage']
     
+    # Use tabbed interface: Content tab + Hero tab
+    edit_handler = TabbedInterface([
+        ObjectList(content_panels, heading='Content'),
+        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
+    ])
+    
     class Meta:
         verbose_name = "Employees Page"
 
 
-class EmployeePage(Page):
+class EmployeePage(HeroMixin, Page):
     """
     Individual employee page. Can only be created as a child of EmployeesPage.
     """
@@ -205,6 +289,12 @@ class EmployeePage(Page):
 
     # Constrain parent pages to only EmployeesPage
     parent_page_types = ['home.EmployeesPage']
+    
+    # Use tabbed interface: Employee Info tab + Hero tab
+    edit_handler = TabbedInterface([
+        ObjectList(content_panels, heading='Employee Information'),
+        ObjectList(HeroMixin.hero_panels, heading='Hero Section'),
+    ])
     
     def save(self, *args, **kwargs):
         # Auto-generate full_name if empty
