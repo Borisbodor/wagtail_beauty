@@ -1,9 +1,15 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
 
 {% block title %}{{ page.title }}{% endblock %}
 
 {% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
+
+{% block header_style %}
+    {% if page.show_hero and page.hero_background_image %}
+        style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{% image page.hero_background_image original as bg_img %}{{ bg_img.url }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+    {% endif %}
+{% endblock %}
 
 {% block header %}
     {% include 'includes/hero_section.html' %}
@@ -207,6 +213,7 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_css %}
 <!-- Custom styling for the booking form -->
 <style>
     .form-control:focus {
@@ -230,3 +237,156 @@
         margin-bottom: 1rem !important;
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('JavaScript file is loading...');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, booking form JavaScript starting...');
+    
+    // First, let's see what form elements exist
+    console.log('All select elements on page:', document.querySelectorAll('select'));
+    console.log('All elements with id containing "location":', document.querySelectorAll('[id*="location"]'));
+    console.log('All elements with id containing "service":', document.querySelectorAll('[id*="service"]'));
+    console.log('All elements with id containing "employee":', document.querySelectorAll('[id*="employee"]'));
+    
+    const locationSelect = document.getElementById('id_location');
+    const serviceSelect = document.getElementById('id_service');
+    const employeeSelect = document.getElementById('id_preferred_employee');
+    
+    console.log('Form elements found:', {
+        location: locationSelect,
+        service: serviceSelect,
+        employee: employeeSelect
+    });
+    
+    if (!locationSelect || !serviceSelect || !employeeSelect) {
+        console.error('Could not find required form elements');
+        console.log('Available form element IDs:', Array.from(document.querySelectorAll('select')).map(el => el.id));
+        return;
+    }
+    
+    // Function to update services based on selected location
+    function updateServices(locationId) {
+        console.log('updateServices called with locationId:', locationId);
+        
+        if (!locationId) {
+            clearSelect(serviceSelect, 'Select a location first');
+            return;
+        }
+        
+        // Show loading state
+        serviceSelect.disabled = true;
+        serviceSelect.innerHTML = '<option value="">Loading services...</option>';
+        
+        const url = `/booking/api/services-by-location/?location_id=${locationId}`;
+        console.log('Fetching services from:', url);
+        
+        // Fetch services for this location
+        fetch(url)
+            .then(response => {
+                console.log('Services response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Services data received:', data);
+                serviceSelect.innerHTML = '<option value="">Select a service</option>';
+                
+                if (data.services && data.services.length > 0) {
+                    data.services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.id;
+                        option.textContent = `${service.name} - ${service.price} (${service.duration})`;
+                        serviceSelect.appendChild(option);
+                    });
+                } else {
+                    serviceSelect.innerHTML = '<option value="">No services available at this location</option>';
+                }
+                
+                serviceSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error fetching services:', error);
+                serviceSelect.innerHTML = '<option value="">Error loading services</option>';
+                serviceSelect.disabled = false;
+            });
+    }
+    
+    // Function to update employees based on selected location
+    function updateEmployees(locationId) {
+        console.log('updateEmployees called with locationId:', locationId);
+        
+        if (!locationId) {
+            clearSelect(employeeSelect, 'Select a location first');
+            return;
+        }
+        
+        // Show loading state
+        employeeSelect.disabled = true;
+        employeeSelect.innerHTML = '<option value="">Loading employees...</option>';
+        
+        const url = `/booking/api/employees-by-location/?location_id=${locationId}`;
+        console.log('Fetching employees from:', url);
+        
+        // Fetch employees for this location
+        fetch(url)
+            .then(response => {
+                console.log('Employees response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Employees data received:', data);
+                employeeSelect.innerHTML = '<option value="">Any Available Employee</option>';
+                
+                if (data.employees && data.employees.length > 0) {
+                    data.employees.forEach(employee => {
+                        const option = document.createElement('option');
+                        option.value = employee.id;
+                        option.textContent = `${employee.name}${employee.job_title ? ' - ' + employee.job_title : ''}`;
+                        employeeSelect.appendChild(option);
+                    });
+                } else {
+                    employeeSelect.innerHTML = '<option value="">No employees at this location</option>';
+                }
+                
+                employeeSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error fetching employees:', error);
+                employeeSelect.innerHTML = '<option value="">Error loading employees</option>';
+                employeeSelect.disabled = false;
+            });
+    }
+    
+    // Function to clear a select and add placeholder option
+    function clearSelect(selectElement, placeholderText) {
+        selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
+        selectElement.disabled = true;
+    }
+    
+    // Listen for location changes
+    locationSelect.addEventListener('change', function() {
+        const locationId = this.value;
+        console.log('Location changed to:', locationId);
+        updateServices(locationId);
+        updateEmployees(locationId);
+    });
+    
+    // Initialize form state - clear and disable service/employee dropdowns
+    clearSelect(serviceSelect, 'Select a location first');
+    clearSelect(employeeSelect, 'Select a location first');
+    console.log('Form initialized - service and employee dropdowns cleared and disabled');
+    
+    // Test the event listener
+    console.log('Adding change event listener to location select...');
+});
+</script>
+{% endblock %}

@@ -1,10 +1,12 @@
 from django.db import models
-from wagtail.models import Page
+from django import forms
+from wagtail.models import Page, Orderable
 from wagtail.fields import RichTextField, StreamField
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel, InlinePanel
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.images import get_image_model_string
+from modelcluster.fields import ParentalKey
 
 
 class HeroMixin(models.Model):
@@ -236,10 +238,7 @@ class EmployeePage(HeroMixin, Page):
     """
     Individual employee page. Can only be created as a child of EmployeesPage.
     """
-    # Import Location model from booking app
-    from booking.models import Location
-    
-    # Employee fields as requested
+    # Employee fields
     first_name = models.CharField(max_length=100, help_text="Employee's first name")
     last_name = models.CharField(max_length=100, help_text="Employee's last name")
     full_name = models.CharField(max_length=200, blank=True, help_text="Full display name (auto-generated if empty)") 
@@ -255,10 +254,11 @@ class EmployeePage(HeroMixin, Page):
     job_title = models.CharField(max_length=200, help_text="Employee's job title/position")
     description = RichTextField(blank=True, help_text="Employee's bio, specialties, or description")
     work_location = models.ForeignKey(
-        'booking.Location', 
+        'home.LocationPage',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name='employees',
         help_text="Employee's primary work location"
     )
 
@@ -273,9 +273,9 @@ class EmployeePage(HeroMixin, Page):
         MultiFieldPanel([
             FieldPanel('email'),
             FieldPanel('job_title'),
+            FieldPanel('work_location'),
         ], heading="Contact & Position"),
         FieldPanel('description'),
-        FieldPanel('work_location'),
     ]
 
     # Constrain parent pages to only EmployeesPage
@@ -286,50 +286,6 @@ class EmployeePage(HeroMixin, Page):
         if not self.full_name:
             self.full_name = f"{self.first_name} {self.last_name}".strip()
         super().save(*args, **kwargs)
-        
-        # Sync with booking Employee model when page is live
-        if self.live:
-            self.sync_to_booking_employee()
-    
-    def sync_to_booking_employee(self):
-        """Create/update corresponding Employee in booking app"""
-        from booking.models import Employee as BookingEmployee
-        
-        if not self.work_location:
-            return  # Need work_location for booking employee
-            
-        # Get or create booking employee
-        booking_employee, created = BookingEmployee.objects.get_or_create(
-            employee_page=self,
-            defaults={
-                'first_name': self.first_name,
-                'last_name': self.last_name,
-                'location': self.work_location,
-                'is_active': True,
-            }
-        )
-        
-        # Update fields if not created
-        if not created:
-            booking_employee.first_name = self.first_name
-            booking_employee.last_name = self.last_name
-            booking_employee.location = self.work_location
-            booking_employee.save()
-    
-    def unpublish(self, *args, **kwargs):
-        """Deactivate booking employee when page is unpublished"""
-        result = super().unpublish(*args, **kwargs)
-        
-        # Deactivate corresponding booking employee
-        from booking.models import Employee as BookingEmployee
-        try:
-            booking_employee = BookingEmployee.objects.get(employee_page=self)
-            booking_employee.is_active = False
-            booking_employee.save()
-        except BookingEmployee.DoesNotExist:
-            pass
-            
-        return result
     
     @property
     def display_name(self):
@@ -443,60 +399,6 @@ class LocationPage(HeroMixin, Page):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        
-        # Sync with booking Location model when page is live
-        if self.live:
-            self.sync_to_booking_location()
-    
-    def sync_to_booking_location(self):
-        """Create/update corresponding Location in booking app"""
-        from booking.models import Location as BookingLocation
-        
-        if not self.location_name:
-            return  # Need location name for booking location
-            
-        # Get or create booking location
-        booking_location, created = BookingLocation.objects.get_or_create(
-            location_page=self,
-            defaults={
-                'name': self.location_name,
-                'address': self.address,
-                'phone': self.phone,
-                'email': self.email,
-                'monday_hours': self.monday_hours,
-                'tuesday_hours': self.tuesday_hours,
-                'wednesday_hours': self.wednesday_hours,
-                'thursday_hours': self.thursday_hours,
-                'friday_hours': self.friday_hours,
-                'saturday_hours': self.saturday_hours,
-                'sunday_hours': self.sunday_hours,
-            }
-        )
-        
-        # Update fields if not created
-        if not created:
-            booking_location.name = self.location_name
-            booking_location.address = self.address
-            booking_location.phone = self.phone
-            booking_location.email = self.email
-            booking_location.monday_hours = self.monday_hours
-            booking_location.tuesday_hours = self.tuesday_hours
-            booking_location.wednesday_hours = self.wednesday_hours
-            booking_location.thursday_hours = self.thursday_hours
-            booking_location.friday_hours = self.friday_hours
-            booking_location.saturday_hours = self.saturday_hours
-            booking_location.sunday_hours = self.sunday_hours
-            booking_location.save()
-    
-    def unpublish(self, *args, **kwargs):
-        """Handle unpublishing of location page"""
-        result = super().unpublish(*args, **kwargs)
-        
-        # Note: We don't delete booking location on unpublish since
-        # it might be referenced by employees and bookings
-        # Instead, we could add an is_active field if needed
-            
-        return result
 
     @property
     def display_name(self):
@@ -580,12 +482,7 @@ class ServicePage(HeroMixin, Page):
         help_text="Service category for organization"
     )
     
-    # Availability
-    available_locations = models.ManyToManyField(
-        'booking.Location',
-        blank=True,
-        help_text="Which locations offer this service?"
-    )
+    # Availability will be handled through ServiceLocation inline model below
     
     content_panels = Page.content_panels + [
         MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
@@ -602,68 +499,19 @@ class ServicePage(HeroMixin, Page):
             FieldPanel('service_category'),
         ], heading="Pricing & Details"),
         
-        FieldPanel('available_locations'),
+        InlinePanel('service_locations', label="Available Locations", help_text="Select which locations offer this service"),
     ]
     
     # Only allow under ServicesPage
     parent_page_types = ['home.ServicesPage']
     
     def save(self, *args, **kwargs):
-        """Auto-fill service_name if empty and sync to booking system"""
+        """Auto-fill service_name if empty"""
         if not self.service_name:
             self.service_name = self.title
         
         super().save(*args, **kwargs)
-        
-        # Sync to booking system when published
-        if self.live:
-            self.sync_to_booking_service()
     
-    def sync_to_booking_service(self):
-        """Sync this page to booking.Service model"""
-        from booking.models import Service as BookingService
-        
-        if not self.service_name:
-            return
-        
-        # Create or update booking service
-        booking_service, created = BookingService.objects.get_or_create(
-            service_page=self,
-            defaults={
-                'name': self.service_name,
-                'description': self.service_description or '',
-                'price': self.price,
-                'duration_minutes': self.duration_minutes,
-                'category': self.service_category,
-                'is_active': True,
-            }
-        )
-        
-        if not created:
-            # Update existing booking service
-            booking_service.name = self.service_name
-            booking_service.description = self.service_description or ''
-            booking_service.price = self.price
-            booking_service.duration_minutes = self.duration_minutes
-            booking_service.category = self.service_category
-            booking_service.save()
-            
-        # Sync locations
-        if self.available_locations.exists():
-            booking_service.locations.set(self.available_locations.all())
-    
-    def unpublish(self, *args, **kwargs):
-        """Deactivate booking service when unpublished"""
-        from booking.models import Service as BookingService
-        
-        try:
-            booking_service = BookingService.objects.get(service_page=self)
-            booking_service.is_active = False
-            booking_service.save()
-        except BookingService.DoesNotExist:
-            pass
-            
-        super().unpublish(*args, **kwargs)
     
     @property
     def display_name(self):
@@ -688,8 +536,39 @@ class ServicePage(HeroMixin, Page):
         """Formatted price display"""
         return f"${self.price}"
     
+    def get_available_locations_display(self):
+        """Get comma-separated list of available location names"""
+        return ", ".join([sl.location.display_name for sl in self.service_locations.all()])
+    
     def __str__(self):
         return f"{self.display_name} ({self.price_display})"
     
     class Meta:
         verbose_name = "Service Page"
+
+
+class ServiceLocation(Orderable):
+    """
+    Through model for ServicePage -> LocationPage relationship.
+    This allows services to be offered at multiple locations.
+    """
+    service = ParentalKey(
+        'ServicePage',
+        on_delete=models.CASCADE,
+        related_name='service_locations'
+    )
+    location = models.ForeignKey(
+        'LocationPage',
+        on_delete=models.CASCADE,
+        help_text="Location where this service is available"
+    )
+    
+    panels = [
+        FieldPanel('location'),
+    ]
+    
+    def __str__(self):
+        return f"{self.service.display_name} at {self.location.display_name}"
+    
+    class Meta:
+        unique_together = ('service', 'location')

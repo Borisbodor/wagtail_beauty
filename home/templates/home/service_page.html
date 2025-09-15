@@ -5,6 +5,12 @@
 
 {% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
 
+{% block header_style %}
+    {% if page.show_hero and page.hero_background_image %}
+        style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{% image page.hero_background_image original as bg_img %}{{ bg_img.url }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+    {% endif %}
+{% endblock %}
+
 {% block header %}
     {% include 'includes/hero_section.html' %}
 {% endblock %}
@@ -51,14 +57,15 @@
                     {% endif %}
                     
                     <!-- Availability -->
-                    {% if page.available_locations.exists %}
+                    {% if page.service_locations.exists %}
                         <h3 class="h5 mb-3">Available Locations</h3>
                         <div class="row mb-4">
-                            {% for location in page.available_locations.all %}
+                            {% for service_location in page.service_locations.all %}
+                                {% with location=service_location.location %}
                                 <div class="col-sm-6 mb-3">
                                     <div class="card border-0 bg-light h-100">
                                         <div class="card-body">
-                                            <h6 class="card-title">{{ location.name }}</h6>
+                                            <h6 class="card-title">{{ location.display_name }}</h6>
                                             <p class="card-text small text-muted mb-2">{{ location.address|linebreaksbr|truncatewords:8 }}</p>
                                             {% if location.phone %}
                                                 <p class="small mb-1">
@@ -75,6 +82,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                {% endwith %}
                             {% endfor %}
                         </div>
                     {% endif %}

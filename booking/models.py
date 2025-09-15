@@ -4,7 +4,6 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from wagtail.models import Page
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.snippets.models import register_snippet
 from wagtail.fields import RichTextField, StreamField
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
@@ -15,258 +14,92 @@ from home.models import HeroMixin, ServicesGridBlock, FeaturesGridBlock, CallToA
 
 
 # ============================================================================
-# BOOKING LOCATION MODEL - Synced with Page-based Location System
+# BOOKING FORM BLOCK
 # ============================================================================
-# 
-# This Location model is used for booking functionality and stays synced
-# with the page-based LocationPage system in home/models.py.
-# 
-# The page system (LocationPage) handles:
-# - Public location profiles and content management  
-# - Rich descriptions, images, full information pages
-# 
-# This model handles:
-# - Booking form dropdowns and selections
-# - Employee location assignments
-# - Internal operational data (hours, contact info)
-# 
-# They stay in sync automatically when locations are published/unpublished.
 
-@register_snippet
-class Location(models.Model):
-    """
-    Location model for booking functionality.
-    Synced with LocationPage from home app.
-    """
-    name = models.CharField(max_length=100, help_text="Location name (e.g. 'Downtown Salon')")
-    address = models.TextField(help_text="Full address of this location")
-    phone = models.CharField(max_length=20, blank=True, help_text="Contact phone number")
-    email = models.EmailField(blank=True, help_text="Contact email")
+class BookingFormBlock(blocks.StructBlock):
+    title = blocks.CharBlock(max_length=200, default="Book Your Appointment")
+    subtitle = blocks.TextBlock(default="Fill out the form below and we'll contact you to confirm your booking.")
     
-    # Reference to the page (optional, for sync)
-    location_page = models.ForeignKey(
-        'wagtailcore.Page',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        help_text="Connected location page (auto-set)"
-    )
-    
-    HOUR_CHOICES = [
-        ('Closed', 'Closed'),
-        ('8:00 AM - 4:00 PM', '8:00 AM - 4:00 PM'),
-        ('8:00 AM - 5:00 PM', '8:00 AM - 5:00 PM'),
-        ('8:00 AM - 6:00 PM', '8:00 AM - 6:00 PM'),
-        ('8:00 AM - 8:00 PM', '8:00 AM - 8:00 PM'),
-        ('9:00 AM - 5:00 PM', '9:00 AM - 5:00 PM'),
-        ('9:00 AM - 6:00 PM', '9:00 AM - 6:00 PM'),
-        ('9:00 AM - 7:00 PM', '9:00 AM - 7:00 PM'),
-        ('9:00 AM - 8:00 PM', '9:00 AM - 8:00 PM'),
-        ('10:00 AM - 4:00 PM', '10:00 AM - 4:00 PM'),
-        ('10:00 AM - 5:00 PM', '10:00 AM - 5:00 PM'),
-        ('10:00 AM - 6:00 PM', '10:00 AM - 6:00 PM'),
-        ('11:00 AM - 4:00 PM', '11:00 AM - 4:00 PM'),
-        ('11:00 AM - 5:00 PM', '11:00 AM - 5:00 PM'),
-    ]
-    
-    monday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
-    tuesday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
-    wednesday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
-    thursday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
-    friday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="9:00 AM - 6:00 PM")
-    saturday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="10:00 AM - 4:00 PM")
-    sunday_hours = models.CharField(max_length=50, choices=HOUR_CHOICES, default="Closed")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    panels = [
-        FieldPanel('location_page'),  # Readonly - shows connected page
-        FieldPanel('name'),
-        FieldPanel('address'),
-        MultiFieldPanel([
-            FieldPanel('phone'),
-            FieldPanel('email'),
-        ], heading="Contact Information"),
-        MultiFieldPanel([
-            FieldPanel('monday_hours'),
-            FieldPanel('tuesday_hours'),
-            FieldPanel('wednesday_hours'),
-            FieldPanel('thursday_hours'),
-            FieldPanel('friday_hours'),
-            FieldPanel('saturday_hours'),
-            FieldPanel('sunday_hours'),
-        ], heading="Opening Hours"),
-    ]
-
     class Meta:
-        verbose_name = "Location"
-        verbose_name_plural = "Locations"
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-
-# Simplified Service model - synced with Page-based Service System
-@register_snippet
-class Service(models.Model):
-    name = models.CharField(max_length=100, help_text="Service name (auto-synced from service page)")
-    description = models.TextField(help_text="Service description (auto-synced)")
-    price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Service price (auto-synced)")
-    duration_minutes = models.PositiveIntegerField(help_text="Service duration (auto-synced)")
-    
-    # Link to the ServicePage that manages this service
-    service_page = models.ForeignKey(
-        'wagtailcore.Page',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        help_text="Connected service page (auto-set)"
-    )
-    
-    locations = models.ManyToManyField(Location, help_text="Which locations offer this service?")
-    
-    CATEGORY_CHOICES = [
-        ('hair', 'Hair Services'),
-        ('nails', 'Nail Services'),
-        ('skincare', 'Skincare & Facials'),
-        ('massage', 'Massage & Spa'),
-        ('makeup', 'Makeup Services'),
-        ('other', 'Other Services'),
-    ]
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
-    is_active = models.BooleanField(default=True, help_text="Available for bookings?")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    panels = [
-        MultiFieldPanel([
-            FieldPanel('name'),
-            FieldPanel('description'),
-        ], heading="Service Info", help_text="These are auto-synced from the service page"),
-        
-        MultiFieldPanel([
-            FieldPanel('price'),
-            FieldPanel('duration_minutes'),
-            FieldPanel('category'),
-        ], heading="Details"),
-        
-        FieldPanel('locations'),
-        FieldPanel('is_active'),
-        FieldPanel('service_page'),
-    ]
-
-    class Meta:
-        verbose_name = "Service"
-        verbose_name_plural = "Services"
-        ordering = ['category', 'name']
-
-    def __str__(self):
-        return f"{self.name} (${self.price})"
-    
-    @property
-    def full_name(self):
-        return self.name
-        
-    def get_locations_list(self):
-        return ", ".join([loc.name for loc in self.locations.all()])
+        template = 'blocks/booking_form_block.html'
+        icon = 'form'
+        label = 'Booking Form'
 
 
 # ============================================================================
-# BOOKING EMPLOYEE MODEL - Synced with Page-based Employee System
+# BOOKING PAGE MODEL
 # ============================================================================
-# 
-# This Employee model is used for booking functionality and stays synced
-# with the page-based EmployeePage system in home/models.py.
-# 
-# The page system (EmployeePage) handles:
-# - Public employee profiles and content management
-# - Rich descriptions, images, full bios
-# 
-# This model handles:
-# - Booking form dropdowns and selections
-# - Service assignments and scheduling
-# - Internal operational data
-# 
-# They stay in sync automatically when employees are published/unpublished.
 
-@register_snippet
-class Employee(models.Model):
-    """
-    Simplified Employee model for booking functionality.
-    Synced with EmployeePage from home app.
-    """
-    # Basic info (synced from EmployeePage)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100) 
+class BookingPage(HeroMixin, Page):
+    content = StreamField([
+        ('booking_form', BookingFormBlock()),
+        ('services', ServicesGridBlock()),
+        ('features', FeaturesGridBlock()),
+        ('cta', CallToActionBlock()),
+        ('text', TextBlock()),
+        ('gallery', ImageGalleryBlock()),
+    ], blank=True, use_json_field=True)
     
-    # Reference to the page (optional, for sync)
-    employee_page = models.ForeignKey(
-        'wagtailcore.Page',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        help_text="Connected employee page (auto-set)"
+    thank_you_text = RichTextField(
+        blank=True, 
+        default="<p>Thank you for your booking request! We'll contact you within 24 hours to confirm your appointment.</p>",
+        help_text="Message shown after successful form submission"
     )
-    
-    # Booking-specific fields
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, help_text="Primary work location")
-    services = models.ManyToManyField(Service, help_text="Services this employee can perform")
-    is_active = models.BooleanField(default=True, help_text="Available for bookings?")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    panels = [
-        MultiFieldPanel([
-            FieldPanel('first_name'),
-            FieldPanel('last_name'),
-        ], heading="Name"),
-        MultiFieldPanel([
-            FieldPanel('location'),
-            FieldPanel('services'),
-        ], heading="Work Assignment"),
-        FieldPanel('is_active'),
+    content_panels = Page.content_panels + [
+        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
+        FieldPanel('content'),
+        FieldPanel('thank_you_text'),
     ]
-
-    class Meta:
-        verbose_name = "Employee"
-        verbose_name_plural = "Employees"
-        ordering = ['last_name', 'first_name']
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-        
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
-        
-    def get_services_list(self):
-        return ", ".join([service.name for service in self.services.all()])
+    
+    def serve(self, request, *args, **kwargs):
+        from .views import booking_page_view
+        return booking_page_view(request, self)
 
 
-@register_snippet
+# ============================================================================
+# FORM SUBMISSION MODEL
+# ============================================================================
+
 class FormSubmission(models.Model):
+    """
+    Booking form submissions. References page models directly instead of snippets.
+    """
+    # Customer information
     customer_first_name = models.CharField(max_length=50, help_text="Customer's first name")
     customer_last_name = models.CharField(max_length=50, help_text="Customer's last name")
     customer_email = models.EmailField(help_text="Customer's email address")
     customer_phone = models.CharField(max_length=20, help_text="Customer's phone number")
     
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, help_text="Which location?")
-    service = models.ForeignKey(Service, on_delete=models.CASCADE, help_text="Which service?")
+    # Booking details - now reference page models directly
+    location = models.ForeignKey(
+        'home.LocationPage',
+        on_delete=models.CASCADE,
+        related_name='booking_submissions',
+        help_text="Which location?"
+    )
+    service = models.ForeignKey(
+        'home.ServicePage',
+        on_delete=models.CASCADE,
+        related_name='booking_submissions',
+        help_text="Which service?"
+    )
     preferred_employee = models.ForeignKey(
-        Employee, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        'home.EmployeePage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='booking_submissions',
         help_text="Preferred employee (optional - leave blank for any available)"
     )
     
+    # Appointment details
     preferred_date = models.DateField(help_text="Preferred appointment date")
     preferred_time = models.TimeField(help_text="Preferred appointment time")
     notes = models.TextField(blank=True, help_text="Additional notes or special requests from customer")
+    
+    # Status tracking
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
         ('confirmed', 'Confirmed'),
@@ -275,6 +108,8 @@ class FormSubmission(models.Model):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     staff_notes = models.TextField(blank=True, help_text="Internal notes for staff (not visible to customer)")
+    
+    # Timestamps
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -298,108 +133,24 @@ class FormSubmission(models.Model):
         MultiFieldPanel([
             FieldPanel('status'),
             FieldPanel('staff_notes'),
-        ], heading="Staff Only"),
+        ], heading="Status & Notes"),
     ]
 
     class Meta:
-        verbose_name = "Form Submission"
-        verbose_name_plural = "Form Submissions"
+        verbose_name = "Booking Submission"
+        verbose_name_plural = "Booking Submissions"
         ordering = ['-submitted_at']
 
     def __str__(self):
-        return f"{self.customer_first_name} {self.customer_last_name} - {self.service.name} ({self.status})"
-        
+        return f"{self.customer_full_name} - {self.service.display_name} at {self.location.display_name}"
+    
     @property
     def customer_full_name(self):
         return f"{self.customer_first_name} {self.customer_last_name}"
-        
+    
     def get_employee_preference(self):
+        """Get preferred employee display name or 'Any Available'"""
         if self.preferred_employee:
-            return str(self.preferred_employee)
+            return self.preferred_employee.display_name
         return "Any Available"
-
-
-class BookingFormBlock(blocks.StructBlock):
-    title = blocks.CharBlock(max_length=200, default="Book Your Appointment")
-    subtitle = blocks.TextBlock(default="Fill out the form below and we'll contact you within 24 hours")
-    
-    def get_context(self, value, parent_context=None):
-        from .forms import BookingForm
-        context = super().get_context(value, parent_context)
-        
-        form = None
-        if parent_context and 'form' in parent_context:
-            form = parent_context['form']
-        elif parent_context and 'page' in parent_context:
-            page = parent_context['page']
-            if hasattr(page, '_form'):
-                form = page._form
-        
-        if form is None:
-            form = BookingForm()
-            
-        context['form'] = form
-        return context
-    
-    class Meta:
-        template = 'blocks/booking_form_block.html'
-        icon = 'form'
-        label = 'Booking Form'
-
-
-class BookingPage(HeroMixin, Page):
-    content = StreamField([
-        ('booking_form', BookingFormBlock()),
-        ('services', ServicesGridBlock()),
-        ('features', FeaturesGridBlock()),
-        ('cta', CallToActionBlock()),
-        ('text', TextBlock()),
-        ('gallery', ImageGalleryBlock()),
-    ], blank=True, use_json_field=True)
-    
-    thank_you_text = RichTextField(
-        blank=True, 
-        default="<p>Thank you for your booking request! We'll contact you within 24 hours to confirm your appointment.</p>",
-        help_text="Message shown after successful form submission"
-    )
-
-    content_panels = Page.content_panels + [
-        MultiFieldPanel(HeroMixin.hero_panels, heading="Hero Section", classname="collapsible"),
-        FieldPanel('content'),
-        FieldPanel('thank_you_text'),
-    ]
-
-    def serve(self, request):
-        from .forms import BookingForm
-        
-        if request.method == 'POST':
-            form = BookingForm(request.POST)
-            if form.is_valid():
-                submission = form.save()
-                messages.success(request, 'Your booking request has been submitted successfully!')
-                return render(request, self.get_template(request), {
-                    'page': self,
-                    'form': BookingForm(),
-                    'success': True,
-                })
-            else:
-                messages.error(request, 'Please correct the errors below.')
-        else:
-            form = BookingForm()
-        
-        self._form = form
-        
-        return render(request, self.get_template(request), {
-            'page': self,
-            'form': form,
-        })
-        
-    def get_context(self, request, *args, **kwargs):
-        from .forms import BookingForm
-        context = super().get_context(request, *args, **kwargs)
-        context['form'] = BookingForm()
-        
-        return context
-
-    class Meta:
-        verbose_name = "Booking Page"
+    get_employee_preference.short_description = "Preferred Employee"

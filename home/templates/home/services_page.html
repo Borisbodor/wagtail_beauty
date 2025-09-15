@@ -5,6 +5,12 @@
 
 {% block header_class %}{% if page.show_hero %}bg-primary{% else %}d-none{% endif %}{% endblock %}
 
+{% block header_style %}
+    {% if page.show_hero and page.hero_background_image %}
+        style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{% image page.hero_background_image original as bg_img %}{{ bg_img.url }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+    {% endif %}
+{% endblock %}
+
 {% block header %}
     {% include 'includes/hero_section.html' %}
 {% endblock %}
@@ -45,12 +51,12 @@
                                 </small>
                             </div>
                             
-                            {% if service.available_locations.exists %}
+                            {% if service.service_locations.exists %}
                                 <div class="small text-secondary mb-2">
                                     <i class="fas fa-map-marker-alt me-1"></i>
                                     Available at: 
-                                    {% for location in service.available_locations.all %}
-                                        {{ location.name }}{% if not forloop.last %}, {% endif %}
+                                    {% for service_location in service.service_locations.all %}
+                                        {{ service_location.location.display_name }}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 </div>
                             {% endif %}
