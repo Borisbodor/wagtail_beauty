@@ -29,6 +29,14 @@ python manage.py runserver
 - Website: `http://localhost:8000`
 - Admin Panel: `http://localhost:8000/admin`
 
+## ⚡ Quick Start (For Existing Project)
+
+```bash
+cd /home/niklas/boris/beauty_site    # Navigate to project folder
+source beauty_venv/bin/activate      # Activate virtual environment
+python manage.py runserver           # Start development server
+```
+
 ## 📁 What's Included vs Excluded
 
 ### ✅ **Committed to Git:**
@@ -58,6 +66,8 @@ python manage.py runserver
 
 ### **Getting Latest Changes:**
 ```bash
+cd /home/niklas/boris/beauty_site   # Navigate to project folder
+source beauty_venv/bin/activate     # Activate virtual environment
 git pull origin main
 pip install -r requirements.txt    # Update dependencies
 python manage.py migrate           # Apply database changes
@@ -102,6 +112,8 @@ beauty_salon/
 
 ## 🛠️ Common Commands
 ```bash
+cd /home/niklas/boris/beauty_site    # Navigate to project folder
+source beauty_venv/bin/activate      # Activate virtual environment
 python manage.py runserver          # Start development server
 python manage.py makemigrations     # After changing models
 python manage.py migrate            # Apply database changes
