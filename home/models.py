@@ -5,6 +5,7 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel, InlinePanel
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
+from wagtail.blocks import PageChooserBlock
 from wagtail.images import get_image_model_string
 from modelcluster.fields import ParentalKey
 
@@ -94,18 +95,6 @@ class HeroMixin(models.Model):
         abstract = True
 
 
-class ServiceBlock(blocks.StructBlock):
-    image = ImageChooserBlock()
-    title = blocks.CharBlock(max_length=100)
-    description = blocks.TextBlock()
-    link_url = blocks.URLBlock(required=False)
-    
-    class Meta:
-        template = 'blocks/service_block.html'
-        icon = 'pick'
-        label = 'Service'
-
-
 class FeatureBlock(blocks.StructBlock):
     image = ImageChooserBlock()
     title = blocks.CharBlock(max_length=100)
@@ -119,17 +108,6 @@ class FeatureBlock(blocks.StructBlock):
 
 # HeroBlock removed - now handled by HeroMixin on all pages
 # Hero functionality is available via the "Hero Section" tab in page admin
-
-
-class ServicesGridBlock(blocks.StructBlock):
-    title = blocks.CharBlock(max_length=200, default="Our Services")
-    subtitle = blocks.TextBlock(default="Professional beauty treatments")
-    services = blocks.ListBlock(ServiceBlock())
-    
-    class Meta:
-        template = 'blocks/services_grid_block.html'
-        icon = 'list-ul'
-        label = 'Services'
 
 
 class FeaturesGridBlock(blocks.StructBlock):
@@ -201,9 +179,109 @@ class ImageGalleryBlock(blocks.StructBlock):
         label = 'Gallery'
 
 
+class ServiceChooserBlock(blocks.StructBlock):
+    title = blocks.CharBlock(max_length=200, default="Our Services")
+    subtitle = blocks.TextBlock(default="Choose from our professional beauty treatments", required=False)
+    selected_services = blocks.ListBlock(
+        PageChooserBlock(page_type="home.ServicePage"),
+        min_num=1,
+        help_text="Select existing services to display"
+    )
+    display_style = blocks.ChoiceBlock(
+        choices=[
+            ('detailed', 'Detailed View (best for 1-2 services)'),
+            ('grid', 'Grid View (best for 3+ services)'),
+            ('list', 'List View (compact)'),
+        ],
+        default='grid'
+    )
+    background_style = blocks.ChoiceBlock(
+        choices=[
+            ('white', 'White'),
+            ('light', 'Light Gray'),
+            ('primary', 'Brand Color'),
+        ],
+        default='white'
+    )
+    
+    class Meta:
+        template = 'blocks/service_chooser_block.html'
+        icon = 'pick'
+        label = 'Service Selector'
+
+
+class EmployeeChooserBlock(blocks.StructBlock):
+    title = blocks.CharBlock(max_length=200, default="Meet Our Team")
+    subtitle = blocks.TextBlock(default="Our skilled professionals are here to serve you", required=False)
+    selected_employees = blocks.ListBlock(
+        PageChooserBlock(page_type="home.EmployeePage"),
+        min_num=1,
+        help_text="Select existing employees to display"
+    )
+    display_style = blocks.ChoiceBlock(
+        choices=[
+            ('detailed', 'Detailed View (best for 1-2 employees)'),
+            ('grid', 'Grid View (best for 3+ employees)'),
+            ('list', 'List View (compact)'),
+        ],
+        default='grid'
+    )
+    background_style = blocks.ChoiceBlock(
+        choices=[
+            ('white', 'White'),
+            ('light', 'Light Gray'),
+            ('primary', 'Brand Color'),
+        ],
+        default='light'
+    )
+    
+    class Meta:
+        template = 'blocks/employee_chooser_block.html'
+        icon = 'user'
+        label = 'Employee Selector'
+
+
+class LocationChooserBlock(blocks.StructBlock):
+    title = blocks.CharBlock(max_length=200, default="Our Locations")
+    subtitle = blocks.TextBlock(default="Find us at these convenient locations", required=False)
+    selected_locations = blocks.ListBlock(
+        PageChooserBlock(page_type="home.LocationPage"),
+        min_num=1,
+        help_text="Select existing locations to display"
+    )
+    display_style = blocks.ChoiceBlock(
+        choices=[
+            ('detailed', 'Detailed View (best for 1-2 locations)'),
+            ('grid', 'Grid View (best for 3+ locations)'),
+            ('list', 'List View (compact)'),
+        ],
+        default='grid'
+    )
+    show_hours = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        help_text="Display opening hours for each location"
+    )
+    background_style = blocks.ChoiceBlock(
+        choices=[
+            ('white', 'White'),
+            ('light', 'Light Gray'),
+            ('primary', 'Brand Color'),
+        ],
+        default='white'
+    )
+    
+    class Meta:
+        template = 'blocks/location_chooser_block.html'
+        icon = 'site'
+        label = 'Location Selector'
+
+
 class HomePage(HeroMixin, Page):
     content = StreamField([
-        ('services', ServicesGridBlock()),
+        ('service_selector', ServiceChooserBlock()),
+        ('employee_selector', EmployeeChooserBlock()),
+        ('location_selector', LocationChooserBlock()),
         ('features', FeaturesGridBlock()),
         ('cta', CallToActionBlock()),
         ('text', TextBlock()),

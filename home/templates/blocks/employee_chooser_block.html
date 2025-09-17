@@ -1,0 +1,160 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+
+<section class="py-5 bg-{{ value.background_style }}{% if value.background_style == 'primary' %} text-white{% endif %}">
+    <div class="container">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">{{ value.title }}</h2>
+                {% if value.subtitle %}
+                    <p class="lead{% if value.background_style == 'primary' %} text-white-50{% else %} text-muted{% endif %}">{{ value.subtitle }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Employees Display -->
+        {% if value.selected_employees %}
+            {% if value.display_style == 'detailed' %}
+                <!-- Detailed View - Best for 1-2 employees -->
+                <div class="row g-4">
+                    {% for employee in value.selected_employees %}
+                        <div class="col-lg-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4 text-center">
+                                    {% if employee.employee_image %}
+                                        {% image employee.employee_image width-200 class="rounded-circle mx-auto d-block mb-4" style="width: 150px; height: 150px; object-fit: cover;" %}
+                                    {% else %}
+                                        <div class="bg-light rounded-circle mx-auto d-block mb-4 d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">
+                                            <i class="bi bi-person-fill text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <h3 class="card-title h4 mb-2">{{ employee.display_name }}</h3>
+                                    <p class="text-primary fw-semibold mb-3">{{ employee.job_title }}</p>
+                                    
+                                    {% if employee.work_location %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <i class="bi bi-geo-alt me-1"></i>{{ employee.work_location.display_name }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if employee.email %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <i class="bi bi-envelope me-1"></i>{{ employee.email }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if employee.description %}
+                                        <div class="mb-4 text-start">
+                                            {{ employee.description|richtext }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                        <a href="{{ employee.url }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-person-lines-fill me-2"></i>View Profile
+                                        </a>
+                                        <a href="/booking/" class="btn btn-primary">
+                                            <i class="bi bi-calendar-plus me-2"></i>Book with {{ employee.first_name }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {% elif value.display_style == 'list' %}
+                <!-- List View - Compact -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        {% for employee in value.selected_employees %}
+                            <div class="card mb-3 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2 text-center">
+                                            {% if employee.employee_image %}
+                                                {% image employee.employee_image width-100 class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;" %}
+                                            {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 70px; height: 70px;">
+                                                    <i class="bi bi-person-fill text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-1">{{ employee.display_name }}</h5>
+                                            <p class="card-text text-primary mb-1">{{ employee.job_title }}</p>
+                                            {% if employee.work_location %}
+                                                <small class="text-muted">
+                                                    <i class="bi bi-geo-alt me-1"></i>{{ employee.work_location.display_name }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <a href="{{ employee.url }}" class="btn btn-outline-primary btn-sm me-2">Profile</a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm">Book</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% else %}
+                <!-- Grid View - Best for 3+ employees (Default) -->
+                <div class="row g-4">
+                    {% for employee in value.selected_employees %}
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4 text-center">
+                                    {% if employee.employee_image %}
+                                        {% image employee.employee_image width-150 class="rounded-circle mx-auto d-block mb-3" style="width: 100px; height: 100px; object-fit: cover;" %}
+                                    {% else %}
+                                        <div class="bg-light rounded-circle mx-auto d-block mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                            <i class="bi bi-person-fill text-muted" style="font-size: 2rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <h5 class="card-title mb-1">{{ employee.display_name }}</h5>
+                                    <p class="text-primary mb-2">{{ employee.job_title }}</p>
+                                    
+                                    {% if employee.work_location %}
+                                        <p class="card-text text-muted small mb-3">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ employee.work_location.display_name }}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ employee.url }}" class="btn btn-outline-primary btn-sm">
+                                                View Profile
+                                            </a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm">
+                                                Book Appointment
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No employees selected. Please add employees in the admin panel.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>

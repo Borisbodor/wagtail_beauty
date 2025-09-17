@@ -1,0 +1,159 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+
+<section class="py-5 bg-{{ value.background_style }}{% if value.background_style == 'primary' %} text-white{% endif %}">
+    <div class="container">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">{{ value.title }}</h2>
+                {% if value.subtitle %}
+                    <p class="lead{% if value.background_style == 'primary' %} text-white-50{% else %} text-muted{% endif %}">{{ value.subtitle }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Services Display -->
+        {% if value.selected_services %}
+            {% if value.display_style == 'detailed' %}
+                <!-- Detailed View - Best for 1-2 services -->
+                <div class="row g-4">
+                    {% for service in value.selected_services %}
+                        <div class="col-lg-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                {% if service.service_image %}
+                                    {% image service.service_image width-600 class="card-img-top" style="height: 250px; object-fit: cover;" %}
+                                {% endif %}
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h3 class="card-title h4 mb-0">{{ service.display_name }}</h3>
+                                        <span class="badge bg-primary fs-6">{{ service.price_display }}</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>{{ service.duration_display }}
+                                            <span class="mx-2">•</span>
+                                            <i class="bi bi-tag me-1"></i>{{ service.get_service_category_display }}
+                                        </small>
+                                    </div>
+                                    
+                                    {% if service.service_description %}
+                                        <div class="mb-4">
+                                            {{ service.service_description|richtext }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Available Locations -->
+                                    {% if service.service_locations.all %}
+                                        <div class="mb-3">
+                                            <strong class="small text-muted">Available at:</strong>
+                                            <div class="mt-1">
+                                                {% for location in service.service_locations.all %}
+                                                    <span class="badge bg-light text-dark me-1">{{ location.location.display_name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="{{ service.url }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-info-circle me-2"></i>Learn More
+                                        </a>
+                                        <a href="/booking/" class="btn btn-primary">
+                                            <i class="bi bi-calendar-plus me-2"></i>Book Now
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {% elif value.display_style == 'list' %}
+                <!-- List View - Compact -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        {% for service in value.selected_services %}
+                            <div class="card mb-3 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            {% if service.service_image %}
+                                                {% image service.service_image width-100 class="rounded" style="width: 80px; height: 80px; object-fit: cover;" %}
+                                            {% else %}
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                                    <i class="bi bi-scissors text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5 class="card-title mb-1">{{ service.display_name }}</h5>
+                                            <p class="card-text text-muted small mb-2">{{ service.get_service_category_display }}</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>{{ service.duration_display }}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-2 text-center">
+                                            <span class="h5 text-primary mb-0">{{ service.price_display }}</span>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <a href="{{ service.url }}" class="btn btn-outline-primary btn-sm me-2">Details</a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm">Book</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% else %}
+                <!-- Grid View - Best for 3+ services (Default) -->
+                <div class="row g-4">
+                    {% for service in value.selected_services %}
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                {% if service.service_image %}
+                                    {% image service.service_image width-400 class="card-img-top" style="height: 200px; object-fit: cover;" %}
+                                {% endif %}
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title">{{ service.display_name }}</h5>
+                                        <span class="badge bg-primary">{{ service.price_display }}</span>
+                                    </div>
+                                    
+                                    <p class="card-text text-muted small mb-2">
+                                        <i class="bi bi-clock me-1"></i>{{ service.duration_display }}
+                                        <span class="mx-2">•</span>
+                                        {{ service.get_service_category_display }}
+                                    </p>
+                                    
+                                    
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2 d-md-flex">
+                                            <a href="{{ service.url }}" class="btn btn-outline-primary btn-sm flex-fill">
+                                                Learn More
+                                            </a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm flex-fill">
+                                                Book Now
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No services selected. Please add services in the admin panel.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,205 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+
+<section class="py-5 bg-{{ value.background_style }}{% if value.background_style == 'primary' %} text-white{% endif %}">
+    <div class="container">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">{{ value.title }}</h2>
+                {% if value.subtitle %}
+                    <p class="lead{% if value.background_style == 'primary' %} text-white-50{% else %} text-muted{% endif %}">{{ value.subtitle }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Locations Display -->
+        {% if value.selected_locations %}
+            {% if value.display_style == 'detailed' %}
+                <!-- Detailed View - Best for 1-2 locations -->
+                <div class="row g-4">
+                    {% for location in value.selected_locations %}
+                        <div class="col-lg-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                {% if location.location_image %}
+                                    {% image location.location_image width-600 class="card-img-top" style="height: 250px; object-fit: cover;" %}
+                                {% endif %}
+                                <div class="card-body p-4">
+                                    <h3 class="card-title h4 mb-3">{{ location.display_name }}</h3>
+                                    
+                                    <!-- Address -->
+                                    <div class="mb-3">
+                                        <h6 class="text-primary mb-2">
+                                            <i class="bi bi-geo-alt-fill me-2"></i>Address
+                                        </h6>
+                                        <p class="mb-0">{{ location.address|linebreaksbr }}</p>
+                                    </div>
+                                    
+                                    <!-- Contact Info -->
+                                    {% if location.phone or location.email %}
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-2">
+                                                <i class="bi bi-telephone-fill me-2"></i>Contact
+                                            </h6>
+                                            {% if location.phone %}
+                                                <p class="mb-1">
+                                                    <i class="bi bi-phone me-2"></i>
+                                                    <a href="tel:{{ location.phone }}" class="text-decoration-none">{{ location.phone }}</a>
+                                                </p>
+                                            {% endif %}
+                                            {% if location.email %}
+                                                <p class="mb-0">
+                                                    <i class="bi bi-envelope me-2"></i>
+                                                    <a href="mailto:{{ location.email }}" class="text-decoration-none">{{ location.email }}</a>
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Opening Hours -->
+                                    {% if value.show_hours %}
+                                        <div class="mb-3">
+                                            <h6 class="text-primary mb-2">
+                                                <i class="bi bi-clock-fill me-2"></i>Opening Hours
+                                            </h6>
+                                            <div class="row text-sm">
+                                                <div class="col-6">
+                                                    <small class="d-block"><strong>Monday:</strong> {{ location.monday_hours }}</small>
+                                                    <small class="d-block"><strong>Tuesday:</strong> {{ location.tuesday_hours }}</small>
+                                                    <small class="d-block"><strong>Wednesday:</strong> {{ location.wednesday_hours }}</small>
+                                                    <small class="d-block"><strong>Thursday:</strong> {{ location.thursday_hours }}</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="d-block"><strong>Friday:</strong> {{ location.friday_hours }}</small>
+                                                    <small class="d-block"><strong>Saturday:</strong> {{ location.saturday_hours }}</small>
+                                                    <small class="d-block"><strong>Sunday:</strong> {{ location.sunday_hours }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if location.description %}
+                                        <div class="mb-4">
+                                            {{ location.description|richtext }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="{{ location.url }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-info-circle me-2"></i>Location Details
+                                        </a>
+                                        <a href="/booking/" class="btn btn-primary">
+                                            <i class="bi bi-calendar-plus me-2"></i>Book Here
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {% elif value.display_style == 'list' %}
+                <!-- List View - Compact -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        {% for location in value.selected_locations %}
+                            <div class="card mb-4 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="row align-items-start">
+                                        <div class="col-md-2">
+                                            {% if location.location_image %}
+                                                {% image location.location_image width-150 class="rounded" style="width: 100px; height: 100px; object-fit: cover;" %}
+                                            {% else %}
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                                    <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h5 class="card-title mb-2">{{ location.display_name }}</h5>
+                                            <p class="card-text text-muted small mb-2">{{ location.address|linebreaksbr }}</p>
+                                            {% if location.phone %}
+                                                <small class="text-muted d-block">
+                                                    <i class="bi bi-phone me-1"></i>{{ location.phone }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        {% if value.show_hours %}
+                                            <div class="col-md-4">
+                                                <h6 class="text-primary mb-2">Today's Hours</h6>
+                                                <small class="text-muted">
+                                                    <!-- Show today's hours - simplified -->
+                                                    <i class="bi bi-clock me-1"></i>{{ location.monday_hours }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        <div class="col-md-2 text-end">
+                                            <a href="{{ location.url }}" class="btn btn-outline-primary btn-sm d-block mb-2">Details</a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm d-block">Book</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% else %}
+                <!-- Grid View - Best for 3+ locations (Default) -->
+                <div class="row g-4">
+                    {% for location in value.selected_locations %}
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                {% if location.location_image %}
+                                    {% image location.location_image width-400 class="card-img-top" style="height: 200px; object-fit: cover;" %}
+                                {% endif %}
+                                <div class="card-body d-flex flex-column p-4">
+                                    <h5 class="card-title mb-3">{{ location.display_name }}</h5>
+                                    
+                                    <div class="mb-3 flex-grow-1">
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ location.address|truncatewords:5 }}
+                                        </p>
+                                        {% if location.phone %}
+                                            <p class="card-text text-muted small mb-2">
+                                                <i class="bi bi-phone me-1"></i>{{ location.phone }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        {% if value.show_hours %}
+                                            <div class="mb-2">
+                                                <small class="text-primary fw-semibold d-block mb-1">Hours:</small>
+                                                <small class="text-muted d-block">Mon-Fri: {{ location.monday_hours }}</small>
+                                                <small class="text-muted d-block">Sat: {{ location.saturday_hours }}</small>
+                                                <small class="text-muted d-block">Sun: {{ location.sunday_hours }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ location.url }}" class="btn btn-outline-primary btn-sm">
+                                                View Location
+                                            </a>
+                                            <a href="/booking/" class="btn btn-primary btn-sm">
+                                                Book Appointment
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No locations selected. Please add locations in the admin panel.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>

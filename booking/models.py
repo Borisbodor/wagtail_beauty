@@ -10,7 +10,7 @@ from wagtail.images.blocks import ImageChooserBlock
 from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
 # Import blocks and mixins from home app
-from home.models import HeroMixin, ServicesGridBlock, FeaturesGridBlock, CallToActionBlock, TextBlock, ImageGalleryBlock
+from home.models import HeroMixin, FeaturesGridBlock, CallToActionBlock, TextBlock, ImageGalleryBlock, ServiceChooserBlock, EmployeeChooserBlock, LocationChooserBlock
 
 
 # ============================================================================
@@ -34,7 +34,9 @@ class BookingFormBlock(blocks.StructBlock):
 class BookingPage(HeroMixin, Page):
     content = StreamField([
         ('booking_form', BookingFormBlock()),
-        ('services', ServicesGridBlock()),
+        ('service_selector', ServiceChooserBlock()),
+        ('employee_selector', EmployeeChooserBlock()),
+        ('location_selector', LocationChooserBlock()),
         ('features', FeaturesGridBlock()),
         ('cta', CallToActionBlock()),
         ('text', TextBlock()),
